@@ -100,17 +100,6 @@
     background: #fff;
   }
 
-  button.primary-btn {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  button.primary-btn:hover { opacity: 0.9; }
-
   .price-item {
     display: flex;
     justify-content: space-between;
@@ -136,24 +125,8 @@
     border-radius: 8px;
     padding: 20px;
     text-align: center;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
   }
-
-  .scanned-list {
-    max-height: 200px;
-    overflow-y: auto;
-    margin-bottom: 15px;
-    border: 1px solid #eee;
-    border-radius: 6px;
-    padding: 8px;
-  }
-
-  .scanned-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  .scanned-row input { margin-bottom: 0; }
 
   .toast {
     position: fixed;
@@ -220,7 +193,7 @@
     </div>
   </div>
 
-  <!-- SECCIÓN 2: SUBIR BOLETA / ESCANEAR -->
+  <!-- SECCIÓN 2: SUBIR BOLETA / ESCANEAR AUTOMÁTICO -->
   <div id="uploadSection" class="section-content">
     <div class="card">
       <h2>1. Selecciona el Comercio</h2>
@@ -245,14 +218,8 @@
     <div class="card">
       <h2>2. Capturar Boleta</h2>
       <div class="ocr-preview-box">
-        <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Toma una foto clara o sube el ticket impreso</p>
-        <input type="file" accept="image/*" id="receiptFile" onchange="processOCR(this)" style="margin-bottom:0;" />
-      </div>
-
-      <div id="ocrEditor" style="display: none;">
-        <label style="margin-top: 15px;">3. Revisión Inteligente (OCR detectó esto):</label>
-        <div class="scanned-list" id="scannedItemsContainer"></div>
-        <button class="primary-btn" onclick="submitPricesToCloud()">🚀 Guardar y Ver en el Repositorio</button>
+        <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Selecciona la foto y se subirá automáticamente</p>
+        <input type="file" accept="image/*" id="receiptFile" onchange="processAndAutoSubmit(this)" style="margin-bottom:0;" />
       </div>
     </div>
   </div>
@@ -299,9 +266,6 @@
     setTimeout(() => t.classList.remove('show'), 3500);
   }
 
-  // ==========================================
-  // CARGAR PRECIOS DESDE SUPABASE
-  // ==========================================
   async function loadCloudPrices() {
     const db = initSupabase();
     const commune = document.getElementById('filterCommune').value;
@@ -327,7 +291,6 @@
         .order('report_date', { ascending: false });
 
       const { data, error } = await query;
-
       if (error) throw error;
 
       globalPricesCache = data.map(item => ({
@@ -340,7 +303,6 @@
       }));
 
       filterLocalMemory();
-
     } catch (err) {
       console.error('Error cargando de Supabase:', err);
       container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">Error al conectar con la base de datos cloud.</p>';
@@ -388,12 +350,19 @@
   }
 
   // ==========================================
-  // MOTOR OCR LOCAL
+  // PROCESAR OCR Y SUBIR AUTOMÁTICAMENTE
   // ==========================================
-  async function processOCR(input) {
+  async function processAndAutoSubmit(input) {
     if (input.files && input.files[0]) {
+      const storeName = document.getElementById('upStoreName').value.trim();
+      if (!storeName) {
+        alert('Por favor, ingresa el nombre del Supermercado / Local antes de subir la foto.');
+        input.value = '';
+        return;
+      }
+
       const file = input.files[0];
-      showToast('📸 Iniciando motor OCR...');
+      showToast('📸 Leyendo boleta con OCR...');
 
       try {
         const worker = await Tesseract.createWorker('spa', 1, {
@@ -427,23 +396,12 @@
         });
 
         if (extractedItems.length === 0) {
-          extractedItems = [{ name: "Item detectado (Editar nombre)", price: 1000 }];
+          extractedItems = [{ name: "Producto Detectado Boleta", price: 1000 }];
         }
 
-        document.getElementById('ocrEditor').style.display = 'block';
-        const scannedContainer = document.getElementById('scannedItemsContainer');
-        scannedContainer.innerHTML = '';
+        // Subida directa automática a Supabase
+        await uploadToCloudDirect(storeName, extractedItems);
 
-        extractedItems.forEach((el, idx) => {
-          scannedContainer.innerHTML += `
-            <div class="scanned-row">
-              <input type="text" value="${el.name}" id="scannedName_${idx}" style="flex:2;" />
-              <input type="number" value="${el.price}" id="scannedPrice_${idx}" style="flex:1;" />
-            </div>
-          `;
-        });
-
-        showToast('✅ ¡Lectura completa! Revisa y comparte.');
       } catch (err) {
         console.error(err);
         showToast('❌ Error al procesar la imagen.');
@@ -451,12 +409,8 @@
     }
   }
 
-  // ==========================================
-  // GUARDAR Y REDIRIGIR AUTOMÁTICAMENTE AL REPOSITORIO
-  // ==========================================
-  async function submitPricesToCloud() {
+  async function uploadToCloudDirect(storeName, items) {
     const db = initSupabase();
-    const storeName = document.getElementById('upStoreName').value.trim();
     const commune = document.getElementById('upCommune').value;
     const sector = document.getElementById('upSector').value;
 
@@ -465,12 +419,7 @@
       return;
     }
 
-    if (!storeName) {
-      alert('Por favor ingresa el nombre del comercio.');
-      return;
-    }
-
-    showToast('☁️ Guardando en la red comunitaria...');
+    showToast('☁️ Subiendo precios automáticamente...');
 
     try {
       let { data: storeData, error: storeError } = await db
@@ -480,70 +429,49 @@
         .single();
 
       if (storeError) {
-        console.error("Error en Store:", storeError);
-        alert("Error al registrar comercio: " + storeError.message);
-        return;
+        throw new Error("No se pudo registrar el comercio: " + storeError.message);
       }
       const storeId = storeData.id;
 
-      const rows = document.querySelectorAll('.scanned-row');
-      for (let idx = 0; idx < rows.length; idx++) {
-        const nameInput = document.getElementById(`scannedName_${idx}`);
-        const priceInput = document.getElementById(`scannedPrice_${idx}`);
-        
-        if (!nameInput || !priceInput) continue;
-        
-        const name = nameInput.value.trim();
-        const price = parseInt(priceInput.value);
+      for (let item of items) {
+        let { data: existingProd } = await db
+          .from('products')
+          .select('id')
+          .ilike('name', item.name)
+          .maybeSingle();
 
-        if (name && !isNaN(price)) {
-          let { data: existingProd } = await db
+        let productId;
+
+        if (existingProd) {
+          productId = existingProd.id;
+        } else {
+          let { data: newProd, error: prodError } = await db
             .from('products')
-            .select('id')
-            .ilike('name', name)
-            .maybeSingle();
+            .insert({ name: item.name, category: 'Abarrotes', unit: 'Unidad' })
+            .select()
+            .single();
 
-          let productId;
-
-          if (existingProd) {
-            productId = existingProd.id;
-          } else {
-            let { data: newProd, error: prodError } = await db
-              .from('products')
-              .insert({ name: name, category: 'Abarrotes', unit: 'Unidad' })
-              .select()
-              .single();
-
-            if (prodError) {
-              console.error("Error creando producto:", prodError);
-              continue;
-            }
-            productId = newProd.id;
-          }
-
-          let { error: priceError } = await db.from('prices').insert({
-            product_id: productId,
-            store_id: storeId,
-            price: price
-          });
-
-          if (priceError) {
-            console.error("Error guardando precio:", priceError);
-          }
+          if (prodError) continue;
+          productId = newProd.id;
         }
+
+        await db.from('prices').insert({
+          product_id: productId,
+          store_id: storeId,
+          price: item.price
+        });
       }
 
-      showToast('🎉 ¡Guardado! Redirigiendo al repositorio...');
-      document.getElementById('ocrEditor').style.display = 'none';
+      showToast('🎉 ¡Precios agregados al repositorio!');
       document.getElementById('receiptFile').value = '';
       document.getElementById('upStoreName').value = '';
       
-      // Salto automático inmediato a la pestaña de búsqueda de precios
+      // Redirección instantánea a la pestaña de búsqueda
       switchTab('search');
 
     } catch (err) {
-      console.error('Error general al guardar:', err);
-      alert('Error crítico al sincronizar con la nube.');
+      console.error('Error al subir:', err);
+      alert('Error al sincronizar: ' + err.message);
     }
   }
 
