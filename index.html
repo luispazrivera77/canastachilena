@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Canasta Chile - Monitor de Productos Esenciales</title>
+<title>Canasta Chile - Monitor Nacional de Productos Esenciales</title>
 <!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -68,7 +68,7 @@
     background: #fff;
   }
 
-  /* Contenedor del Carrusel / Ticker Protagonista */
+  /* Contenedor del Ticker Protagonista */
   .ticker-container {
     overflow: hidden;
     position: relative;
@@ -86,11 +86,11 @@
     gap: 12px;
     position: absolute;
     width: 100%;
-    animation: scrollProducts 25s linear infinite;
+    animation: scrollProducts 30s linear infinite;
   }
 
   .ticker-container:hover .ticker-track {
-    animation-play-state: paused; /* Pausa al pasar el mouse o tocar */
+    animation-play-state: paused;
   }
 
   @keyframes scrollProducts {
@@ -98,7 +98,6 @@
     100% { transform: translateY(-50%); }
   }
 
-  /* Tarjeta de Producto Destacado */
   .product-spotlight {
     background: white;
     border-radius: 10px;
@@ -116,8 +115,8 @@
   .best-deal {
     text-align: right;
   }
-  .best-deal .price { font-size: 1.25rem; font-weight: 800; color: var(--primary-color); display: block; }
-  .best-deal .store-tag { font-size: 0.8rem; font-weight: 600; color: #d90429; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+  .best-deal .price { font-size: 1.20rem; font-weight: 800; color: var(--primary-color); display: block; }
+  .best-deal .store-tag { font-size: 0.75rem; font-weight: 600; color: #d90429; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
 
   button.refresh-btn {
     background: var(--accent-color);
@@ -152,36 +151,39 @@
 <body>
 
 <header>
-  <h1>⭐ Canasta Chile - El Producto Protagonista</h1>
-  <p>Monitoreo en vivo del mejor precio de la zona</p>
+  <h1>🇨🇱 Canasta Chile - Monitor Nacional</h1>
+  <p>El mejor precio de tu Región y Comuna en tiempo real</p>
 </header>
 
 <main>
-  <!-- Selector de Zona -->
+  <!-- Selector de Cobertura Nacional -->
   <div class="card">
-    <h2>Zona Geográfica de Búsqueda</h2>
+    <h2>📍 Cobertura Territorial</h2>
     <div style="display: flex; gap: 10px;">
       <div style="flex: 1;">
-        <label>Comuna / Localidad</label>
+        <label>Región</label>
+        <select id="filterRegion" onchange="updateCommunities(); updateTicker();">
+          <!-- Se llena dinámicamente -->
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label>Comuna</label>
         <select id="filterCommune" onchange="updateTicker()">
-          <option value="La Serena" selected>La Serena</option>
-          <option value="Coquimbo">Coquimbo</option>
-          <option value="Ovalle">Ovalle</option>
-          <option value="Santiago">Santiago</option>
+          <!-- Se llena dinámicamente según la región -->
         </select>
       </div>
     </div>
-    <button class="refresh-btn" onclick="updateTicker()">🔄 Actualizar Mercado en Vivo</button>
+    <button class="refresh-btn" onclick="updateTicker()">🔄 Actualizar Red Nacional</button>
   </div>
 
-  <!-- Carrusel Protagonista de Productos -->
+  <!-- Carrusel Protagonista de Productos por Zona -->
   <div class="card">
-    <h2>🏆 Mejores Precios Detectados (En Movimiento)</h2>
-    <input type="text" id="searchProduct" placeholder="Filtrar producto estrella..." oninput="updateTicker()" />
+    <h2>🏆 Productos Protagonistas (Mejor Precio Local)</h2>
+    <input type="text" id="searchProduct" placeholder="Buscar producto esencial..." oninput="updateTicker()" />
     
     <div class="ticker-container">
       <div class="ticker-track" id="tickerTrack">
-        <!-- Se inyecta dinámicamente -->
+        <!-- Inyección dinámica -->
       </div>
     </div>
     <p style="text-align: center; font-size: 0.75rem; color: #777; margin-top: 8px;">💡 Mantén presionado o pon el cursor para pausar el carrusel.</p>
@@ -191,7 +193,26 @@
 <div id="toast" class="toast"></div>
 
 <script>
-  // Base de datos de productos esenciales con precios en distintos comercios de la zona
+  // Estructura oficial de Regiones y Comunas de Chile
+  const chileGeoData = {
+    "Arica y Parinacota": ["Arica", "Camarones", "Putre", "General Lagos"],
+    "Tarapacá": ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Pica", "Huara"],
+    "Antofagasta": ["Antofagasta", "Mejillones", "Sierra Gorda", "Taltal", "Calama", "Ollagüe", "San Pedro de Atacama", "Tocopilla", "María Elena"],
+    "Atacama": ["Copiapó", "Caldera", "Tierra Amarilla", "Chañaral", "Diego de Almagro", "Vallenar", "Alto del Carmen", "Freirina", "Huasco"],
+    "Coquimbo": ["La Serena", "Coquimbo", "Andacollo", "La Higuera", "Paihuano", "Vicuña", "Illapel", "Canela", "Los Vilos", "Salamanca", "Ovalle", "Combarbalá", "Monte Patria", "Punitaqui", "Río Hurtado"],
+    "Valparaíso": ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "San Esteban", "Rinconada", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Quillota", "Calera", "Hijuelas", "La Cruz", "Nogales", "San Antonio", "Algarrobo", "Cartagena", "El Quisco", "El Tabo", "Santo Domingo", "San Felipe", "Catemu", "Llaillay", "Panquehue", "Putaendo", "Limache", "Quilpué", "Villa Alemana", "Olmué"],
+    "Metropolitana de Santiago": ["Santiago", "Cerrillos", "Cerro Navia", "Conchalí", "El Bosque", "Estación Central", "Huechuraba", "Independencia", "La Cisterna", "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa", "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel", "Quilicura", "Quinta Normal", "Recoleta", "Renca", "San Joaquín", "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "Pirque", "San José de Maipo", "Colina", "Lampa", "Tiltil", "San Bernardo", "Buin", "Calera de Tango", "Paine", "Melipilla", "Alhué", "Curacaví", "María Pinto", "San Pedro", "Talagante", "El Monte", "Isla de Maipo", "Padre Hurtado", "Peñaflor"],
+    "O'Higgins": ["Rancagua", "Codegua", "Coinco", "Coltauco", "Doñihue", "Graneros", "Las Cabras", "Machalí", "Malloa", "Mostazal", "Olivar", "Peumo", "Pichidegua", "Quinta de Tilcoco", "Rengo", "Requínoa", "San Vicente", "Pichilemu", "La Estrella", "Litueche", "Marchihue", "Navidad", "Paredones", "San Fernando", "Chépica", "Chimbarongo", "Lolol", "Nancagua", "Palmilla", "Peralillo", "Placilla", "Pumanque", "Santa Cruz"],
+    "Maule": ["Talca", "Constitución", "Curepto", "Empedrado", "Maule", "Pelarco", "Pencahue", "Río Claro", "San Clemente", "San Rafael", "Cauquenes", "Chanco", "Pelluhue", "Curicó", "Hualañé", "Licantén", "Molina", "Rauco", "Romeral", "Sagrada Familia", "Teno", "Vichuquén", "Linares", "Colbún", "Longaví", "Parral", "Retiro", "San Javier", "Villa Alegre", "Yerbas Buenas"],
+    "Ñuble": ["Chillán", "Bulnes", "Cobquecura", "Coelemu", "Coihueco", "El Carmen", "Ninhue", "Ñiquén", "Pemuco", "Pinto", "Portezuelo", "Quillón", "Quirihue", "Ránquil", "San Carlos", "San Fabián", "San Ignacio", "San Nicolás", "Treguaco", "Yungay"],
+    "Biobío": ["Concepción", "Coronel", "Chiguayante", "Florida", "Hualqui", "Lota", "Penco", "San Pedro de la Paz", "Santa Juana", "Talcahuano", "Tomé", "Hualpén", "Lebu", "Arauco", "Cañete", "Contulmo", "Curanilahue", "Los Álamos", "Tirúa", "Los Ángeles", "Antuco", "Cabrero", "Laja", "Mulchén", "Nacimiento", "Negrete", "Quilaco", "Quilleco", "San Rosendo", "Santa Bárbara", "Tucapel", "Yumbel", "Alto Biobío"],
+    "La Araucanía": ["Temuco", "Carahue", "Cunco", "Curarrehue", "Freire", "Galvarino", "Gorbea", "Lautaro", "Loncoche", "Melipeuco", "Nueva Imperial", "Padre Las Casas", "Perquenco", "Pitrufquén", "Pucón", "Saavedra", "Teodoro Schmidt", "Toltén", "Vilcún", "Villarrica", "Angol", "Collipulli", "Curacautín", "Ercilla", "Lonquimay", "Los Sauces", "Lumaco", "Purén", "Renaico", "Traiguén", "Victoria"],
+    "Los Ríos": ["Valdivia", "Corral", "Lanco", "Los Lagos", "Máfil", "Mariquina", "Paillaco", "Panguipulli", "La Unión", "Río Bueno", "Futrono", "Lago Ranco"],
+    "Los Lagos": ["Puerto Montt", "Calbuco", "Cochamó", "Fresia", "Frutillar", "Los Muermos", "Llanquihue", "Maullín", "Puerto Varas", "Castro", "Ancud", "Chonchi", "Curaco de Vélez", "Dalcahue", "Puqueldón", "Queilén", "Quellón", "Quemchi", "Osorno", "Puerto Octay", "Purranque", "Puyehue", "Río Negro", "San Juan de la Costa", "San Pablo", "Chaitén", "Futaleufú", "Hualaihué", "Palena"],
+    "Aysén": ["Coihaique", "Lago Verde", "Aysén", "Cisnes", "Guaitecas", "Cochrane", "O'Higgins", "Tortel", "Chile Chico", "Río Ibáñez"],
+    "Magallanes": ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
+  };
+
   const rawProductsMarket = [
     { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Jumbo": 1120, "Lider": 1090, "Santa Isabel": 1150, "Unimarc": 1110 } },
     { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Jumbo": 1090, "Lider": 1050, "Santa Isabel": 1080, "Unimarc": 1070 } },
@@ -221,12 +242,40 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  function initRegions() {
+    const regSelect = document.getElementById('filterRegion');
+    regSelect.innerHTML = '';
+    
+    for (const region in chileGeoData) {
+      let opt = document.createElement('option');
+      opt.value = region;
+      opt.textContent = region;
+      if (region === "Coquimbo") opt.selected = true;
+      regSelect.appendChild(opt);
+    }
+    updateCommunities();
+  }
+
+  function updateCommunities() {
+    const regSelect = document.getElementById('filterRegion').value;
+    const comSelect = document.getElementById('filterCommune');
+    comSelect.innerHTML = '';
+
+    const communes = chileGeoData[regSelect] || [];
+    communes.forEach((com, idx) => {
+      let opt = document.createElement('option');
+      opt.value = com;
+      opt.textContent = com;
+      if (regSelect === "Coquimbo" && com === "La Serena" && idx === 0) opt.selected = true;
+      comSelect.appendChild(opt);
+    });
+  }
+
   function updateTicker() {
     const commune = document.getElementById('filterCommune').value;
     const searchVal = document.getElementById('searchProduct').value.toLowerCase();
     const track = document.getElementById('tickerTrack');
 
-    // Filtrar productos
     let filtered = rawProductsMarket.filter(item => item.name.toLowerCase().includes(searchVal));
 
     if (filtered.length === 0) {
@@ -234,21 +283,24 @@
       return;
     }
 
-    // Calcular el mejor precio (mínimo) para cada producto entre los supermercados
     let htmlContent = '';
-    
-    // Duplicamos el array para lograr el efecto de scroll infinito continuo perfecto
     const loopItems = [...filtered, ...filtered];
 
     loopItems.forEach(prod => {
-      // Encontrar el supermercado con el menor precio
       let bestStore = "";
       let bestPrice = Infinity;
 
       for (const [store, price] of Object.entries(prod.prices)) {
-        // Variación leve según comuna seleccionada
-        let communeMod = commune === "Santiago" ? 1.04 : (commune === "Ovalle" ? 1.01 : 1.0);
-        let adjustedPrice = Math.round((price * communeMod) / 10) * 10;
+        // Factor regional simulado para dar realismo geográfico (ej: extremos más caros)
+        let regionFactor = 1.0;
+        const currentReg = document.getElementById('filterRegion').value;
+        if (["Arica y Parinacota", "Tarapacá", "Magallanes", "Aysén"].includes(currentReg)) {
+          regionFactor = 1.08;
+        } else if (currentReg === "Metropolitana de Santiago") {
+          regionFactor = 1.03;
+        }
+
+        let adjustedPrice = Math.round((price * regionFactor) / 10) * 10;
 
         if (adjustedPrice < bestPrice) {
           bestPrice = adjustedPrice;
@@ -260,7 +312,7 @@
         <div class="product-spotlight">
           <div class="product-details">
             <h3>${prod.name}</h3>
-            <span class="badge">${prod.category}</span>
+            <span class="badge">${prod.category} • 📍 ${commune}</span>
           </div>
           <div class="best-deal">
             <span class="price">$${bestPrice.toLocaleString('es-CL')}</span>
@@ -274,8 +326,9 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    initRegions();
     updateTicker();
-    showToast('🌟 Monitoreo de productos activos en la zona');
+    showToast('🇨🇱 Cobertura nacional activa');
   });
 </script>
 </body>
