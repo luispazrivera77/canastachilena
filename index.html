@@ -52,8 +52,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
+  }
+
+  /* Estilo garantizado para la bandera SVG en PC y Móvil */
+  .chile-flag {
+    width: 28px;
+    height: 18px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    display: inline-block;
+    vertical-align: middle;
   }
 
   header p {
@@ -98,29 +108,30 @@
   .lock-card h2 { color: var(--primary-color); margin-bottom: 15px; font-size: 1.3rem; }
   .lock-card p { font-size: 0.9rem; color: #555; margin-bottom: 20px; line-height: 1.4; }
 
-  /* Barra superior de Acciones (Compartir y Feedback) */
+  /* Barra superior de Acciones (Compacta y Estilizada) */
   .action-bar {
     display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 8px;
+    margin-bottom: 12px;
+    justify-content: center;
   }
 
   .action-btn {
-    flex: 1;
     background: #ffffff;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 0.85rem;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--primary-color);
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    gap: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     transition: background 0.2s;
+    width: auto;
     margin-bottom: 0;
   }
 
@@ -240,7 +251,7 @@
   .national-record-banner h4 { font-size: 0.9rem; color: #856404; margin-bottom: 4px; }
   .national-record-banner p { font-size: 0.85rem; color: #533f03; }
 
-  /* Contenedor del Ticker Carrusel */
+  /* Contenedor del Ticker Carrusel (Ultra lento: 150s) */
   .ticker-container {
     overflow: hidden;
     position: relative;
@@ -258,7 +269,7 @@
     gap: 12px;
     position: absolute;
     width: 100%;
-    animation: scrollProducts 90s linear infinite;
+    animation: scrollProducts 150s linear infinite;
   }
 
   .ticker-container:hover .ticker-track {
@@ -409,13 +420,22 @@
 
 <header>
   <div class="header-content">
-    <h1><span>🇨🇱</span> Canasta Chile - Monitor Nacional</h1>
+    <h1>
+      <!-- Bandera de Chile en formato SVG garantizado para PC y Móvil -->
+      <svg class="chile-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+        <rect width="900" height="600" fill="#d52b1e"/>
+        <rect width="900" height="300" fill="#fff"/>
+        <rect width="300" height="300" fill="#0039a6"/>
+        <polygon fill="#fff" points="150,65.84 175.74,145.1 259.02,145.1 191.64,194.06 217.38,273.32 150,224.36 82.62,273.32 108.36,194.06 40.98,145.1 124.26,145.1"/>
+      </svg>
+      Canasta Chile - Monitor Nacional
+    </h1>
     <p>El mejor precio de tu Comuna en tiempo real</p>
   </div>
 </header>
 
 <main>
-  <!-- Barra de acciones rápidas (Compartir y Feedback) -->
+  <!-- Barra de acciones rápidas (botones compactos) -->
   <div class="action-bar">
     <button class="action-btn" onclick="shareApp()">📤 Compartir App</button>
     <button class="action-btn" onclick="switchTab('feedback')">💬 Dejar Feedback</button>
@@ -632,7 +652,6 @@
     }
   }
 
-  // Envío de feedback directamente a Supabase
   async function sendFeedbackToSupabase() {
     const user = document.getElementById('feedbackUser').value.trim() || "Anónimo";
     const msg = document.getElementById('feedbackMessage').value.trim();
@@ -848,7 +867,6 @@
       return;
     }
 
-    // Guardar también en la tabla de Supabase (opcional según tus tablas)
     try {
       await supabaseClient.from('prices').insert([{
         product_name: prodName,
