@@ -219,8 +219,9 @@
     border-left: 6px solid var(--primary-color);
   }
 
-  .product-details h3 { font-size: 1.05rem; color: #111; margin-bottom: 3px; }
-  .product-details .badge { font-size: 0.75rem; color: #555; background: #e9ecef; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  .product-details h3 { font-size: 1.05rem; color: #111; margin-bottom: 2px; }
+  .product-details .badge { font-size: 0.75rem; color: #555; background: #e9ecef; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 2px; }
+  .product-details .reporter-credit { font-size: 0.7rem; color: #888; font-style: italic; display: block; }
 
   .best-deal { text-align: right; }
   .best-deal .price { font-size: 1.20rem; font-weight: 800; color: var(--primary-color); display: block; }
@@ -258,8 +259,9 @@
   }
 
   .podium-1 .rank-info .position { color: var(--primary-color); }
-  .rank-info h3 { font-size: 1.05rem; color: #212529; }
+  .rank-info h3 { font-size: 1.05rem; color: #212529; margin-bottom: 2px; }
   .rank-info .store-name { font-size: 0.85rem; color: #495057; font-weight: 600; }
+  .rank-info .reporter-credit { font-size: 0.7rem; color: #888; font-style: italic; display: block; margin-top: 2px; }
 
   .rank-price { text-align: right; }
   .rank-price .amount {
@@ -412,6 +414,9 @@
       <h2>📝 Aclaración o Reporte Vecinal</h2>
       <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Ayuda a tu comuna ingresando un precio verificado en tu local.</p>
 
+      <label>Tu Usuario / Correo</label>
+      <input type="text" id="reportUser" placeholder="Ej. luispaz77@xxx" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
+
       <label>Comercio / Supermercado</label>
       <input type="text" id="reportStore" placeholder="Ej. Jumbo Centro, Líder, Feria Libre..." style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
@@ -438,25 +443,25 @@
   let userDetectedCommune = "La Serena";
 
   let productsMarketDB = [
-    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1090, "Santa Isabel": 1070, "Jumbo": 1150, "Unimarc": 1110, "Acuenta": 990 } },
-    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1050, "Santa Isabel": 1080, "Jumbo": 1090, "Unimarc": 1040, "Acuenta": 970 } },
-    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", prices: { "Lider": 1290, "Santa Isabel": 1350, "Jumbo": 1390, "Unimarc": 1310, "Acuenta": 1190 } },
-    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", prices: { "Lider": 890, "Santa Isabel": 920, "Jumbo": 950, "Unimarc": 880, "Acuenta": 790 } },
-    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", prices: { "Lider": 2490, "Santa Isabel": 2550, "Jumbo": 2590, "Unimarc": 2450, "Acuenta": 2390 } },
-    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", prices: { "Lider": 1250, "Santa Isabel": 1280, "Jumbo": 1290, "Unimarc": 1220, "Acuenta": 1150 } },
-    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", prices: { "Lider": 1980, "Santa Isabel": 1990, "Jumbo": 2050, "Unimarc": 1950, "Feria Libre": 1790 } },
-    { name: "Pan Hallulla (1 Kg)", category: "Panadería", prices: { "Lider": 1990, "Santa Isabel": 2010, "Jumbo": 2090, "Unimarc": 1960, "Feria Libre": 1800 } },
-    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", prices: { "Lider": 4850, "Santa Isabel": 4990, "Jumbo": 5190, "Unimarc": 4790, "Feria Libre": 4500 } },
-    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", prices: { "Lider": 4390, "Santa Isabel": 4450, "Jumbo": 4490, "Unimarc": 4290, "Acuenta": 4190 } },
-    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", prices: { "Lider": 5890, "Santa Isabel": 5950, "Jumbo": 5990, "Unimarc": 5790, "Acuenta": 5590 } },
-    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", prices: { "Lider": 2190, "Santa Isabel": 2220, "Jumbo": 2250, "Unimarc": 2150, "Acuenta": 1990 } },
-    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1690, "Santa Isabel": 1720, "Jumbo": 1750, "Unimarc": 1650, "Feria Libre": 1200 } },
-    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1290, "Santa Isabel": 1320, "Jumbo": 1350, "Unimarc": 1250, "Feria Libre": 990 } },
-    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1190, "Santa Isabel": 1220, "Jumbo": 1250, "Unimarc": 1150, "Feria Libre": 900 } },
-    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1890, "Santa Isabel": 1920, "Jumbo": 1950, "Unimarc": 1850, "Feria Libre": 1400 } },
-    { name: "Detergente Líquido 3 Litros", category: "Limpieza", prices: { "Lider": 7990, "Santa Isabel": 8150, "Jumbo": 8290, "Unimarc": 7890, "Acuenta": 7490 } },
-    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", prices: { "Lider": 9890, "Santa Isabel": 9950, "Jumbo": 9990, "Unimarc": 9790, "Acuenta": 9190 } },
-    { name: "Lavaloza Líquido 750cc", category: "Limpieza", prices: { "Lider": 1490, "Santa Isabel": 1520, "Jumbo": 1550, "Unimarc": 1450, "Acuenta": 1390 } }
+    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1090, "Santa Isabel": 1070, "Jumbo": 1150, "Unimarc": 1110, "Acuenta": 990 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1050, "Santa Isabel": 1080, "Jumbo": 1090, "Unimarc": 1040, "Acuenta": 970 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", prices: { "Lider": 1290, "Santa Isabel": 1350, "Jumbo": 1390, "Unimarc": 1310, "Acuenta": 1190 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", prices: { "Lider": 890, "Santa Isabel": 920, "Jumbo": 950, "Unimarc": 880, "Acuenta": 790 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", prices: { "Lider": 2490, "Santa Isabel": 2550, "Jumbo": 2590, "Unimarc": 2450, "Acuenta": 2390 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", prices: { "Lider": 1250, "Santa Isabel": 1280, "Jumbo": 1290, "Unimarc": 1220, "Acuenta": 1150 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", prices: { "Lider": 1980, "Santa Isabel": 1990, "Jumbo": 2050, "Unimarc": 1950, "Feria Libre": 1790 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Pan Hallulla (1 Kg)", category: "Panadería", prices: { "Lider": 1990, "Santa Isabel": 2010, "Jumbo": 2090, "Unimarc": 1960, "Feria Libre": 1800 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", prices: { "Lider": 4850, "Santa Isabel": 4990, "Jumbo": 5190, "Unimarc": 4790, "Feria Libre": 4500 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", prices: { "Lider": 4390, "Santa Isabel": 4450, "Jumbo": 4490, "Unimarc": 4290, "Acuenta": 4190 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", prices: { "Lider": 5890, "Santa Isabel": 5950, "Jumbo": 5990, "Unimarc": 5790, "Acuenta": 5590 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", prices: { "Lider": 2190, "Santa Isabel": 2220, "Jumbo": 2250, "Unimarc": 2150, "Acuenta": 1990 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1690, "Santa Isabel": 1720, "Jumbo": 1750, "Unimarc": 1650, "Feria Libre": 1200 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1290, "Santa Isabel": 1320, "Jumbo": 1350, "Unimarc": 1250, "Feria Libre": 990 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1190, "Santa Isabel": 1220, "Jumbo": 1250, "Unimarc": 1150, "Feria Libre": 900 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1890, "Santa Isabel": 1920, "Jumbo": 1950, "Unimarc": 1850, "Feria Libre": 1400 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Detergente Líquido 3 Litros", category: "Limpieza", prices: { "Lider": 7990, "Santa Isabel": 8150, "Jumbo": 8290, "Unimarc": 7890, "Acuenta": 7490 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", prices: { "Lider": 9890, "Santa Isabel": 9950, "Jumbo": 9990, "Unimarc": 9790, "Acuenta": 9190 }, reporter: "admin_canasta@chile.cl" },
+    { name: "Lavaloza Líquido 750cc", category: "Limpieza", prices: { "Lider": 1490, "Santa Isabel": 1520, "Jumbo": 1550, "Unimarc": 1450, "Acuenta": 1390 }, reporter: "admin_canasta@chile.cl" }
   ];
 
   function switchTab(tabName) {
@@ -526,7 +531,6 @@
     return 1.0;
   }
 
-  // Inicializar vista del Carrusel en movimiento
   function initTickerView() {
     const track = document.getElementById('tickerTrack');
     let regionFactor = getRegionFactor();
@@ -546,11 +550,14 @@
         }
       }
 
+      let reporterText = prod.reporter ? `Aportado por: ${prod.reporter}` : 'Verificado por sistema';
+
       htmlContent += `
         <div class="product-spotlight">
           <div class="product-details">
             <h3>${prod.name}</h3>
             <span class="badge">${prod.category} • 📍 ${userDetectedCommune}</span>
+            <span class="reporter-credit">👤 ${reporterText}</span>
           </div>
           <div class="best-deal">
             <span class="price">$${bestPrice.toLocaleString('es-CL')}</span>
@@ -563,7 +570,6 @@
     track.innerHTML = htmlContent;
   }
 
-  // Manejar entrada de búsqueda y mostrar botón X de borrado
   function handleSearchInput() {
     const val = document.getElementById('searchProduct').value;
     const clearBtn = document.getElementById('clearSearchBtn');
@@ -612,6 +618,8 @@
 
     priceArray.sort((a, b) => a.price - b.price);
 
+    let reporterText = foundProduct.reporter ? `Aportado por: ${foundProduct.reporter}` : 'Verificado por sistema';
+
     let html = '';
     priceArray.forEach((item, index) => {
       let isBest = index === 0;
@@ -624,6 +632,7 @@
             <span class="position">${positionText}</span>
             <h3>${foundProduct.name}</h3>
             <span class="store-name">🛒 ${item.store} (${userDetectedCommune})</span>
+            <span class="reporter-credit">👤 ${reporterText}</span>
             ${isBest ? '<br><span class="badge-best">¡Ahorras más aquí!</span>' : ''}
           </div>
           <div class="rank-price">
@@ -668,6 +677,7 @@
   }
 
   function submitCommunityReport() {
+    const user = document.getElementById('reportUser').value.trim() || "vecino_anonimo@chile.cl";
     const store = document.getElementById('reportStore').value.trim();
     const prodName = document.getElementById('reportProductName').value.trim();
     const price = parseInt(document.getElementById('reportPrice').value);
@@ -681,20 +691,24 @@
 
     if (existing) {
       existing.prices[store] = price;
+      existing.reporter = user;
     } else {
       productsMarketDB.push({
         name: prodName,
         category: "Reportes Comunidad",
-        prices: { [store]: price }
+        prices: { [store]: price },
+        reporter: user
       });
     }
 
     showToast('🎉 ¡Precio reportado con éxito!');
+    document.getElementById('reportUser').value = '';
     document.getElementById('reportStore').value = '';
     document.getElementById('reportProductName').value = '';
     document.getElementById('reportPrice').value = '';
     document.getElementById('receiptImage').value = '';
 
+    initTickerView();
     document.getElementById('searchProduct').value = prodName;
     handleSearchInput();
     switchTab('search');
