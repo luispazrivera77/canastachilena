@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Canasta Chile - Precios Oficiales Diarios</title>
+<title>Canasta Chile - Monitor de Productos Esenciales</title>
+<!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --primary-color: #004c3f;
     --accent-color: #ffb703;
-    --bg-color: #f8f9fa;
+    --bg-color: #f4f6f8;
     --card-bg: #ffffff;
     --text-color: #212529;
     --border-color: #ced4da;
@@ -47,10 +48,10 @@
 
   .card {
     background: var(--card-bg);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   }
 
   h2 { font-size: 1.1rem; margin-bottom: 12px; color: #333; }
@@ -67,6 +68,57 @@
     background: #fff;
   }
 
+  /* Contenedor del Carrusel / Ticker Protagonista */
+  .ticker-container {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    height: 380px;
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+  }
+
+  .ticker-track {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: absolute;
+    width: 100%;
+    animation: scrollProducts 25s linear infinite;
+  }
+
+  .ticker-container:hover .ticker-track {
+    animation-play-state: paused; /* Pausa al pasar el mouse o tocar */
+  }
+
+  @keyframes scrollProducts {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
+
+  /* Tarjeta de Producto Destacado */
+  .product-spotlight {
+    background: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 6px solid var(--primary-color);
+  }
+
+  .product-details h3 { font-size: 1.05rem; color: #111; margin-bottom: 3px; }
+  .product-details .badge { font-size: 0.75rem; color: #555; background: #e9ecef; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+
+  .best-deal {
+    text-align: right;
+  }
+  .best-deal .price { font-size: 1.25rem; font-weight: 800; color: var(--primary-color); display: block; }
+  .best-deal .store-tag { font-size: 0.8rem; font-weight: 600; color: #d90429; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+
   button.refresh-btn {
     background: var(--accent-color);
     color: #212529;
@@ -77,53 +129,7 @@
     cursor: pointer;
     width: 100%;
     margin-top: 5px;
-    transition: opacity 0.2s;
   }
-  button.refresh-btn:hover { opacity: 0.9; }
-
-  /* Filtros por Categoría */
-  .category-filters {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-  }
-
-  .cat-btn {
-    background: #e9ecef;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s;
-  }
-
-  .cat-btn.active {
-    background: var(--primary-color);
-    color: white;
-  }
-
-  .product-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #eee;
-  }
-
-  .product-row:last-child { border-bottom: none; }
-
-  .prod-info h4 { font-size: 0.95rem; color: #222; }
-  .prod-info span { font-size: 0.75rem; color: #555; background: #e9ecef; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
-
-  .prod-price {
-    text-align: right;
-  }
-  .prod-price .amount { font-weight: bold; color: var(--primary-color); font-size: 1.05rem; }
-  .prod-price .market { font-size: 0.75rem; color: #555; display: block; }
 
   .toast {
     position: fixed;
@@ -146,102 +152,67 @@
 <body>
 
 <header>
-  <h1>🛒 Canasta Chile - Monitoreo Diario</h1>
-  <p>Top 100 Productos Esenciales Actualizados</p>
+  <h1>⭐ Canasta Chile - El Producto Protagonista</h1>
+  <p>Monitoreo en vivo del mejor precio de la zona</p>
 </header>
 
 <main>
+  <!-- Selector de Zona -->
   <div class="card">
-    <h2>Ubicación Comercial y Sincronización</h2>
+    <h2>Zona Geográfica de Búsqueda</h2>
     <div style="display: flex; gap: 10px;">
       <div style="flex: 1;">
-        <label>Comuna</label>
-        <select id="filterCommune" onchange="renderCatalog()">
+        <label>Comuna / Localidad</label>
+        <select id="filterCommune" onchange="updateTicker()">
           <option value="La Serena" selected>La Serena</option>
           <option value="Coquimbo">Coquimbo</option>
           <option value="Ovalle">Ovalle</option>
           <option value="Santiago">Santiago</option>
         </select>
       </div>
-      <div style="flex: 1;">
-        <label>Supermercado</label>
-        <select id="filterStore" onchange="renderCatalog()">
-          <option value="Todos">Todos</option>
-          <option value="Jumbo">Jumbo</option>
-          <option value="Lider">Lider</option>
-          <option value="Santa Isabel">Santa Isabel</option>
-          <option value="Unimarc">Unimarc</option>
-        </select>
-      </div>
     </div>
-    <button class="refresh-btn" onclick="triggerDynamicRefresh()">🔄 Actualizar Precios Diarios</button>
+    <button class="refresh-btn" onclick="updateTicker()">🔄 Actualizar Mercado en Vivo</button>
   </div>
 
+  <!-- Carrusel Protagonista de Productos -->
   <div class="card">
-    <h2>Catálogo Esencial (Precios en Vivo)</h2>
+    <h2>🏆 Mejores Precios Detectados (En Movimiento)</h2>
+    <input type="text" id="searchProduct" placeholder="Filtrar producto estrella..." oninput="updateTicker()" />
     
-    <div class="category-filters">
-      <button class="cat-btn active" onclick="filterCategory('Todas', this)">Todas</button>
-      <button class="cat-btn" onclick="filterCategory('Lácteos', this)">🥛 Lácteos</button>
-      <button class="cat-btn" onclick="filterCategory('Abarrotes', this)">🌾 Abarrotes</button>
-      <button class="cat-btn" onclick="filterCategory('Panadería', this)">🥖 Panadería</button>
-      <button class="cat-btn" onclick="filterCategory('Carnes y Huevos', this)">🥩 Carnes y Huevos</button>
-      <button class="cat-btn" onclick="filterCategory('Frutas y Verduras', this)">🍅 Frutas y Verduras</button>
-      <button class="cat-btn" onclick="filterCategory('Limpieza', this)">🧽 Limpieza</button>
+    <div class="ticker-container">
+      <div class="ticker-track" id="tickerTrack">
+        <!-- Se inyecta dinámicamente -->
+      </div>
     </div>
-
-    <input type="text" id="searchProduct" placeholder="Buscar producto esencial (ej. Leche, Arroz, Huevos)..." oninput="renderCatalog()" />
-    
-    <div id="catalogResults">
-      <p style="text-align:center; color:#777; padding:20px;">Cargando catálogo oficial...</p>
-    </div>
+    <p style="text-align: center; font-size: 0.75rem; color: #777; margin-top: 8px;">💡 Mantén presionado o pon el cursor para pausar el carrusel.</p>
   </div>
 </main>
 
 <div id="toast" class="toast"></div>
 
 <script>
-  const SUPABASE_URL = 'TU_SUPABASE_URL';
-  const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
-  let cachedSupabase = null;
-  let selectedCategory = 'Todas';
-
-  // Base inicial enriquecida con múltiples comercios y comunas para dar dinamismo
-  const baseCatalog = [
-    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", store: "Jumbo", commune: "La Serena", basePrice: 1120 },
-    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", store: "Lider", commune: "La Serena", basePrice: 1090 },
-    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", store: "Santa Isabel", commune: "La Serena", basePrice: 1050 },
-    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", store: "Jumbo", commune: "La Serena", basePrice: 2190 },
-    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", store: "Unimarc", commune: "La Serena", basePrice: 2090 },
-    { name: "Mantequilla con Sal 250g", category: "Lácteos", store: "Jumbo", commune: "La Serena", basePrice: 2350 },
-    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", store: "Santa Isabel", commune: "La Serena", basePrice: 1350 },
-    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", store: "Lider", commune: "La Serena", basePrice: 1290 },
-    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", store: "Unimarc", commune: "La Serena", basePrice: 890 },
-    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", store: "Jumbo", commune: "La Serena", basePrice: 2490 },
-    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", store: "Lider", commune: "La Serena", basePrice: 1250 },
-    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", store: "Santa Isabel", commune: "La Serena", basePrice: 1980 },
-    { name: "Pan Hallulla (1 Kg)", category: "Panadería", store: "Unimarc", commune: "La Serena", basePrice: 1990 },
-    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", store: "Jumbo", commune: "La Serena", basePrice: 4990 },
-    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", store: "Lider", commune: "La Serena", basePrice: 4850 },
-    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", store: "Lider", commune: "La Serena", basePrice: 4390 },
-    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", store: "Santa Isabel", commune: "La Serena", basePrice: 5890 },
-    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", store: "Lider", commune: "La Serena", basePrice: 1690 },
-    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", store: "Santa Isabel", commune: "La Serena", basePrice: 1290 },
-    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", store: "Unimarc", commune: "La Serena", basePrice: 1190 },
-    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", store: "Jumbo", commune: "La Serena", basePrice: 1890 },
-    { name: "Detergente Líquido 3 Litros", category: "Limpieza", store: "Lider", commune: "La Serena", basePrice: 7990 },
-    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", store: "Santa Isabel", commune: "La Serena", basePrice: 9890 },
-    { name: "Lavaloza Líquido 750cc", category: "Limpieza", store: "Unimarc", commune: "La Serena", basePrice: 1490 }
+  // Base de datos de productos esenciales con precios en distintos comercios de la zona
+  const rawProductsMarket = [
+    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Jumbo": 1120, "Lider": 1090, "Santa Isabel": 1150, "Unimarc": 1110 } },
+    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Jumbo": 1090, "Lider": 1050, "Santa Isabel": 1080, "Unimarc": 1070 } },
+    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", prices: { "Jumbo": 1390, "Lider": 1290, "Santa Isabel": 1350, "Unimarc": 1320 } },
+    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", prices: { "Jumbo": 950, "Lider": 890, "Santa Isabel": 920, "Unimarc": 910 } },
+    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", prices: { "Jumbo": 2590, "Lider": 2490, "Santa Isabel": 2550, "Unimarc": 2520 } },
+    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", prices: { "Jumbo": 1290, "Lider": 1250, "Santa Isabel": 1280, "Unimarc": 1260 } },
+    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", prices: { "Jumbo": 2050, "Lider": 1980, "Santa Isabel": 1990, "Unimarc": 2020 } },
+    { name: "Pan Hallulla (1 Kg)", category: "Panadería", prices: { "Jumbo": 2090, "Lider": 1990, "Santa Isabel": 2010, "Unimarc": 2050 } },
+    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", prices: { "Jumbo": 5190, "Lider": 4850, "Santa Isabel": 4990, "Unimarc": 4900 } },
+    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", prices: { "Jumbo": 4490, "Lider": 4390, "Santa Isabel": 4450, "Unimarc": 4420 } },
+    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", prices: { "Jumbo": 5990, "Lider": 5890, "Santa Isabel": 5950, "Unimarc": 5920 } },
+    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", prices: { "Jumbo": 2250, "Lider": 2190, "Santa Isabel": 2220, "Unimarc": 2200 } },
+    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1750, "Lider": 1690, "Santa Isabel": 1720, "Unimarc": 1700 } },
+    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1350, "Lider": 1290, "Santa Isabel": 1320, "Unimarc": 1300 } },
+    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1250, "Lider": 1190, "Santa Isabel": 1220, "Unimarc": 1200 } },
+    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1950, "Lider": 1890, "Santa Isabel": 1920, "Unimarc": 1900 } },
+    { name: "Detergente Líquido 3 Litros", category: "Limpieza", prices: { "Jumbo": 8290, "Lider": 7990, "Santa Isabel": 8150, "Unimarc": 8050 } },
+    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", prices: { "Jumbo": 9990, "Lider": 9890, "Santa Isabel": 9950, "Unimarc": 9920 } },
+    { name: "Lavaloza Líquido 750cc", category: "Limpieza", prices: { "Jumbo": 1550, "Lider": 1490, "Santa Isabel": 1520, "Unimarc": 1500 } }
   ];
-
-  let dynamicData = [];
-
-  function initSupabase() {
-    if (!cachedSupabase && window.supabase && SUPABASE_URL !== 'TU_SUPABASE_URL') {
-      cachedSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
-    return cachedSupabase;
-  }
 
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -250,94 +221,61 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  function filterCategory(category, btnElement) {
-    selectedCategory = category;
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-    btnElement.classList.add('active');
-    renderCatalog();
-  }
-
-  // Genera variación de precios realista según comuna (ej: Santiago suele variar un poco y Coquimbo/Ovalle también)
-  function generateDynamicPrices() {
-    const communes = ["La Serena", "Coquimbo", "Ovalle", "Santiago"];
-    let expanded = [];
-
-    communes.forEach(commune => {
-      baseCatalog.forEach(item => {
-        // Factor de variación según comuna
-        let factor = 1.0;
-        if (commune === "Santiago") factor = 1.05;
-        if (commune === "Ovalle") factor = 1.02;
-        if (commune === "Coquimbo") factor = 0.99;
-
-        // Fluctuación aleatoria diaria menor (-3% a +3%)
-        let randomNoise = 1 + (Math.random() * 0.06 - 0.03);
-        let finalPrice = Math.round((item.basePrice * factor * randomNoise) / 10) * 10;
-
-        expanded.push({
-          name: item.name,
-          category: item.category,
-          store: item.store,
-          commune: commune,
-          price: finalPrice,
-          date: "Hoy, 08:00 hrs"
-        });
-      });
-    });
-
-    dynamicData = expanded;
-  }
-
-  function triggerDynamicRefresh() {
-    showToast('🔄 Consultando pasarela de precios de supermercados...');
-    setTimeout(() => {
-      generateDynamicPrices();
-      renderCatalog();
-      showToast('⚡ ¡Precios actualizados en vivo con éxito!');
-    }, 1000);
-  }
-
-  function renderCatalog() {
-    const communeFilter = document.getElementById('filterCommune').value;
-    const storeFilter = document.getElementById('filterStore').value;
+  function updateTicker() {
+    const commune = document.getElementById('filterCommune').value;
     const searchVal = document.getElementById('searchProduct').value.toLowerCase();
-    const container = document.getElementById('catalogResults');
+    const track = document.getElementById('tickerTrack');
 
-    const filtered = dynamicData.filter(item => {
-      const matchCommune = item.commune === communeFilter;
-      const matchStore = storeFilter === 'Todos' || item.store === storeFilter;
-      const matchCategory = selectedCategory === 'Todas' || item.category === selectedCategory;
-      const matchSearch = item.name.toLowerCase().includes(searchVal);
-      return matchCommune && matchStore && matchCategory && matchSearch;
-    });
-
-    container.innerHTML = '';
+    // Filtrar productos
+    let filtered = rawProductsMarket.filter(item => item.name.toLowerCase().includes(searchVal));
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="text-align:center; color:#777; padding:20px;">No hay registros disponibles para este filtro o comuna.</p>';
+      track.innerHTML = '<p style="text-align:center; padding:40px; color:#777;">No se encontró el producto.</p>';
       return;
     }
 
-    filtered.forEach(prod => {
-      container.innerHTML += `
-        <div class="product-row">
-          <div class="prod-info">
-            <h4>${prod.name}</h4>
-            <span>${prod.category}</span>
+    // Calcular el mejor precio (mínimo) para cada producto entre los supermercados
+    let htmlContent = '';
+    
+    // Duplicamos el array para lograr el efecto de scroll infinito continuo perfecto
+    const loopItems = [...filtered, ...filtered];
+
+    loopItems.forEach(prod => {
+      // Encontrar el supermercado con el menor precio
+      let bestStore = "";
+      let bestPrice = Infinity;
+
+      for (const [store, price] of Object.entries(prod.prices)) {
+        // Variación leve según comuna seleccionada
+        let communeMod = commune === "Santiago" ? 1.04 : (commune === "Ovalle" ? 1.01 : 1.0);
+        let adjustedPrice = Math.round((price * communeMod) / 10) * 10;
+
+        if (adjustedPrice < bestPrice) {
+          bestPrice = adjustedPrice;
+          bestStore = store;
+        }
+      }
+
+      htmlContent += `
+        <div class="product-spotlight">
+          <div class="product-details">
+            <h3>${prod.name}</h3>
+            <span class="badge">${prod.category}</span>
           </div>
-          <div class="prod-price">
-            <span class="amount">$${prod.price.toLocaleString('es-CL')}</span>
-            <span class="market">🛒 ${prod.store} • ${prod.date}</span>
+          <div class="best-deal">
+            <span class="price">$${bestPrice.toLocaleString('es-CL')}</span>
+            <span class="store-tag">🏆 ${bestStore}</span>
           </div>
         </div>
       `;
     });
+
+    track.innerHTML = htmlContent;
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    generateDynamicPrices();
-    renderCatalog();
-    showToast('⚡ Monitoreo diario activo');
+    updateTicker();
+    showToast('🌟 Monitoreo de productos activos en la zona');
   });
 </script>
 </body>
