@@ -86,7 +86,7 @@
     gap: 12px;
     position: absolute;
     width: 100%;
-    animation: scrollProducts 30s linear infinite;
+    animation: scrollProducts 35s linear infinite;
   }
 
   .ticker-container:hover .ticker-track {
@@ -193,7 +193,6 @@
 <div id="toast" class="toast"></div>
 
 <script>
-  // Estructura oficial de Regiones y Comunas de Chile
   const chileGeoData = {
     "Arica y Parinacota": ["Arica", "Camarones", "Putre", "General Lagos"],
     "Tarapacá": ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Pica", "Huara"],
@@ -213,26 +212,27 @@
     "Magallanes": ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
   };
 
+  // Precios base distribuidos competitivamente para que diferentes supermercados ganen según el producto
   const rawProductsMarket = [
-    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Jumbo": 1120, "Lider": 1090, "Santa Isabel": 1150, "Unimarc": 1110 } },
-    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Jumbo": 1090, "Lider": 1050, "Santa Isabel": 1080, "Unimarc": 1070 } },
-    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", prices: { "Jumbo": 1390, "Lider": 1290, "Santa Isabel": 1350, "Unimarc": 1320 } },
-    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", prices: { "Jumbo": 950, "Lider": 890, "Santa Isabel": 920, "Unimarc": 910 } },
-    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", prices: { "Jumbo": 2590, "Lider": 2490, "Santa Isabel": 2550, "Unimarc": 2520 } },
-    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", prices: { "Jumbo": 1290, "Lider": 1250, "Santa Isabel": 1280, "Unimarc": 1260 } },
-    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", prices: { "Jumbo": 2050, "Lider": 1980, "Santa Isabel": 1990, "Unimarc": 2020 } },
-    { name: "Pan Hallulla (1 Kg)", category: "Panadería", prices: { "Jumbo": 2090, "Lider": 1990, "Santa Isabel": 2010, "Unimarc": 2050 } },
-    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", prices: { "Jumbo": 5190, "Lider": 4850, "Santa Isabel": 4990, "Unimarc": 4900 } },
-    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", prices: { "Jumbo": 4490, "Lider": 4390, "Santa Isabel": 4450, "Unimarc": 4420 } },
-    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", prices: { "Jumbo": 5990, "Lider": 5890, "Santa Isabel": 5950, "Unimarc": 5920 } },
-    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", prices: { "Jumbo": 2250, "Lider": 2190, "Santa Isabel": 2220, "Unimarc": 2200 } },
-    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1750, "Lider": 1690, "Santa Isabel": 1720, "Unimarc": 1700 } },
-    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1350, "Lider": 1290, "Santa Isabel": 1320, "Unimarc": 1300 } },
-    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1250, "Lider": 1190, "Santa Isabel": 1220, "Unimarc": 1200 } },
-    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", prices: { "Jumbo": 1950, "Lider": 1890, "Santa Isabel": 1920, "Unimarc": 1900 } },
-    { name: "Detergente Líquido 3 Litros", category: "Limpieza", prices: { "Jumbo": 8290, "Lider": 7990, "Santa Isabel": 8150, "Unimarc": 8050 } },
-    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", prices: { "Jumbo": 9990, "Lider": 9890, "Santa Isabel": 9950, "Unimarc": 9920 } },
-    { name: "Lavaloza Líquido 750cc", category: "Limpieza", prices: { "Jumbo": 1550, "Lider": 1490, "Santa Isabel": 1520, "Unimarc": 1500 } }
+    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1090, "Santa Isabel": 1070, "Jumbo": 1150, "Unimarc": 1110 } },
+    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1050, "Santa Isabel": 1080, "Jumbo": 1090, "Unimarc": 1040 } },
+    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", prices: { "Lider": 1290, "Santa Isabel": 1350, "Jumbo": 1390, "Unimarc": 1310 } },
+    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", prices: { "Lider": 890, "Santa Isabel": 920, "Jumbo": 950, "Unimarc": 880 } },
+    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", prices: { "Lider": 2490, "Santa Isabel": 2550, "Jumbo": 2590, "Unimarc": 2450 } },
+    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", prices: { "Lider": 1250, "Santa Isabel": 1280, "Jumbo": 1290, "Unimarc": 1220 } },
+    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", prices: { "Lider": 1980, "Santa Isabel": 1990, "Jumbo": 2050, "Unimarc": 1950 } },
+    { name: "Pan Hallulla (1 Kg)", category: "Panadería", prices: { "Lider": 1990, "Santa Isabel": 2010, "Jumbo": 2090, "Unimarc": 1960 } },
+    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", prices: { "Lider": 4850, "Santa Isabel": 4990, "Jumbo": 5190, "Unimarc": 4790 } },
+    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", prices: { "Lider": 4390, "Santa Isabel": 4450, "Jumbo": 4490, "Unimarc": 4290 } },
+    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", prices: { "Lider": 5890, "Santa Isabel": 5950, "Jumbo": 5990, "Unimarc": 5790 } },
+    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", prices: { "Lider": 2190, "Santa Isabel": 2220, "Jumbo": 2250, "Unimarc": 2150 } },
+    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1690, "Santa Isabel": 1720, "Jumbo": 1750, "Unimarc": 1650 } },
+    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1290, "Santa Isabel": 1320, "Jumbo": 1350, "Unimarc": 1250 } },
+    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1190, "Santa Isabel": 1220, "Jumbo": 1250, "Unimarc": 1150 } },
+    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1890, "Santa Isabel": 1920, "Jumbo": 1950, "Unimarc": 1850 } },
+    { name: "Detergente Líquido 3 Litros", category: "Limpieza", prices: { "Lider": 7990, "Santa Isabel": 8150, "Jumbo": 8290, "Unimarc": 7890 } },
+    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", prices: { "Lider": 9890, "Santa Isabel": 9950, "Jumbo": 9990, "Unimarc": 9790 } },
+    { name: "Lavaloza Líquido 750cc", category: "Limpieza", prices: { "Lider": 1490, "Santa Isabel": 1520, "Jumbo": 1550, "Unimarc": 1450 } }
   ];
 
   function showToast(msg) {
@@ -291,7 +291,6 @@
       let bestPrice = Infinity;
 
       for (const [store, price] of Object.entries(prod.prices)) {
-        // Factor regional simulado para dar realismo geográfico (ej: extremos más caros)
         let regionFactor = 1.0;
         const currentReg = document.getElementById('filterRegion').value;
         if (["Arica y Parinacota", "Tarapacá", "Magallanes", "Aysén"].includes(currentReg)) {
@@ -300,7 +299,9 @@
           regionFactor = 1.03;
         }
 
-        let adjustedPrice = Math.round((price * regionFactor) / 10) * 10;
+        // Variación aleatoria leve para simular ofertas dinámicas locales
+        let randomVariation = 1 + (Math.random() * 0.04 - 0.02);
+        let adjustedPrice = Math.round((price * regionFactor * randomVariation) / 10) * 10;
 
         if (adjustedPrice < bestPrice) {
           bestPrice = adjustedPrice;
