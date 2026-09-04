@@ -4,7 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Canasta Chile - Monitor Nacional y Geolocalización</title>
+<!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Tesseract.js para lectura de boletas -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root {
@@ -407,9 +409,10 @@
 </head>
 <body>
 
+<!-- PANTALLA DE BLOQUEO OBLIGATORIA DE UBICACIÓN -->
 <div id="locationLockOverlay">
   <div class="lock-card">
-    <h2>📍 Ubicación Obligatoria</h2>
+    <h2>📡 Zona Geográfica Detectada</h2>
     <p>Para mostrarte el monitoreo de precios exacto y competitivo de tu zona en Chile, necesitamos validar tu ubicación GPS.</p>
     <button class="primary-btn" onclick="requestUserLocation()">Habilitar Ubicación GPS</button>
   </div>
@@ -418,6 +421,7 @@
 <header>
   <div class="header-content">
     <h1>
+      <!-- Bandera de Chile en formato SVG garantizado para PC y Móvil -->
       <svg class="chile-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
         <rect width="900" height="600" fill="#d52b1e"/>
         <rect width="900" height="300" fill="#fff"/>
@@ -431,19 +435,22 @@
 </header>
 
 <main>
+  <!-- Barra de acciones rápidas (botones compactos) -->
   <div class="action-bar">
     <button class="action-btn" onclick="shareApp()">📤 Compartir App</button>
     <button class="action-btn" onclick="switchTab('feedback')">💬 Dejar Feedback</button>
   </div>
 
+  <!-- Pestañas -->
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchTab('search')">📊 Monitor y Ranking</button>
     <button class="tab-btn" onclick="switchTab('report')">📸 Reportar Precio</button>
   </div>
 
+  <!-- SECCIÓN 1: MONITOR & RANKING -->
   <div id="searchSection" class="section-content active">
     <div class="card">
-      <h2>📍 Zona Geográfica Detectada</h2>
+      <h2>📡 Zona Geográfica Detectada</h2>
       <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
           <label>Región Geolocalizada</label>
@@ -459,6 +466,7 @@
     <div class="card">
       <h2>🔍 Buscar Producto Protagonista</h2>
       
+      <!-- Buscador con botón circular X integrado -->
       <div class="search-input-wrapper">
         <input type="text" id="searchProduct" placeholder="Escribe un producto (ej. Leche, Arroz, Pan)..." oninput="handleSearchInput()" />
         <button id="clearSearchBtn" class="clear-btn" onclick="clearSearch()" title="Borrar búsqueda">✕</button>
@@ -473,17 +481,20 @@
         <button class="chip" onclick="setSearch('Aceite')">🌻 Aceite</button>
       </div>
 
+      <!-- VISTA INICIAL: CARRUSEL PROTAGONISTA -->
       <div id="tickerViewContainer">
-        <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: #444;">⚖️ Todos los Comercios en Transparencia (Orden Alfabético):</h3>
         <div class="ticker-container">
           <div class="ticker-track" id="tickerTrack"></div>
         </div>
         <p style="text-align: center; font-size: 0.75rem; color: #777; margin-top: 8px;">💡 Mantén presionado o pon el cursor para pausar el carrusel.</p>
       </div>
 
+      <!-- VISTA BÚSQUEDA: RANKING + RÉCORD NACIONAL -->
       <div id="rankingViewContainer" style="display: none;">
+        <!-- Banner del Precio Más Barato de Chile -->
         <div id="nationalRecordBanner" class="national-record-banner">
-          </div>
+          <!-- Inyección dinámica del récord nacional -->
+        </div>
 
         <h3 style="font-size: 0.95rem; margin-top: 15px; color: #444;">📊 Ranking de Comercios en tu Comuna:</h3>
         <div class="ranking-list" id="rankingResults"></div>
@@ -491,6 +502,7 @@
     </div>
   </div>
 
+  <!-- SECCIÓN 2: REPORTAR / ACLARAR PRECIO -->
   <div id="reportSection" class="section-content">
     <div class="card">
       <h2>📝 Aclaración o Reporte Vecinal</h2>
@@ -517,6 +529,7 @@
     </div>
   </div>
 
+  <!-- SECCIÓN 3: FEEDBACK Y SUGERENCIAS -->
   <div id="feedbackSection" class="section-content">
     <div class="card">
       <h2>💬 Buzón de Feedback y Sugerencias</h2>
@@ -657,7 +670,6 @@
       console.warn("Guardado local/error de red en Supabase.");
     }
 
-    // Mensaje solicitado actualizado
     showToast("Muchas gracias por comentar. Saludos !");
     document.getElementById('feedbackMessage').value = '';
     switchTab('search');
