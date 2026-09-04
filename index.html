@@ -36,8 +36,30 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
-  header h1 { font-size: 1.3rem; font-weight: 700; }
-  header p { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+  .header-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    max-width: 650px;
+    margin: 0 auto;
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  header p {
+    font-size: 0.85rem;
+    opacity: 0.85;
+  }
 
   main {
     flex: 1;
@@ -178,6 +200,18 @@
   }
   button.primary-btn:hover { opacity: 0.9; }
 
+  /* Banner del Precio Más Barato de Chile */
+  .national-record-banner {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border: 1px solid #ffeeba;
+    border-left: 5px solid #ffc107;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+  }
+  .national-record-banner h4 { font-size: 0.9rem; color: #856404; margin-bottom: 4px; }
+  .national-record-banner p { font-size: 0.85rem; color: #533f03; }
+
   /* Contenedor del Ticker Carrusel */
   .ticker-container {
     overflow: hidden;
@@ -196,7 +230,7 @@
     gap: 12px;
     position: absolute;
     width: 100%;
-    animation: scrollProducts 35s linear infinite;
+    animation: scrollProducts 45s linear infinite;
   }
 
   .ticker-container:hover .ticker-track {
@@ -225,7 +259,7 @@
 
   .best-deal { text-align: right; }
   .best-deal .price { font-size: 1.20rem; font-weight: 800; color: var(--primary-color); display: block; }
-  .best-deal .store-tag { font-size: 0.75rem; font-weight: 600; color: #d90429; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+  .best-deal .store-tag { font-size: 0.75rem; font-weight: 600; color: #495057; background: #e9ecef; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
 
   /* Ranking Cards para búsqueda */
   .ranking-list {
@@ -346,8 +380,10 @@
 </div>
 
 <header>
-  <h1>🇨🇱 Canasta Chile - Monitor Nacional</h1>
-  <p>El mejor precio de tu Comuna en tiempo real</p>
+  <div class="header-content">
+    <h1><span>🇨🇱</span> Canasta Chile - Monitor Nacional</h1>
+    <p>El mejor precio de tu Comuna en tiempo real</p>
+  </div>
 </header>
 
 <main>
@@ -393,16 +429,21 @@
 
       <!-- VISTA INICIAL: CARRUSEL PROTAGONISTA -->
       <div id="tickerViewContainer">
-        <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: #444;">🏆 Productos Esenciales en Movimiento (Mejor Precio Local):</h3>
+        <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: #444;">⚖️ Todos los Comercios en Transparencia (Orden Alfabético):</h3>
         <div class="ticker-container">
           <div class="ticker-track" id="tickerTrack"></div>
         </div>
         <p style="text-align: center; font-size: 0.75rem; color: #777; margin-top: 8px;">💡 Mantén presionado o pon el cursor para pausar el carrusel.</p>
       </div>
 
-      <!-- VISTA BÚSQUEDA: RANKING -->
+      <!-- VISTA BÚSQUEDA: RANKING + RÉCORD NACIONAL -->
       <div id="rankingViewContainer" style="display: none;">
-        <h3 style="font-size: 0.95rem; margin-top: 15px; color: #444;">📊 Ranking de Comercios (Más barato a más caro):</h3>
+        <!-- Banner del Precio Más Barato de Chile -->
+        <div id="nationalRecordBanner" class="national-record-banner">
+          <!-- Inyección dinámica del récord nacional -->
+        </div>
+
+        <h3 style="font-size: 0.95rem; margin-top: 15px; color: #444;">📊 Ranking de Comercios en tu Comuna:</h3>
         <div class="ranking-list" id="rankingResults"></div>
       </div>
     </div>
@@ -531,37 +572,45 @@
     return 1.0;
   }
 
+  // Carrusel que desglosa TODOS los comercios en orden alfabético
   function initTickerView() {
     const track = document.getElementById('tickerTrack');
     let regionFactor = getRegionFactor();
     let htmlContent = '';
 
-    const loopItems = [...productsMarketDB, ...productsMarketDB];
+    // Generar tarjetas para cada producto y ordenar sus comercios alfabéticamente
+    const generateAllEntries = () => {
+      let entries = [];
+      productsMarketDB.forEach(prod => {
+        let sortedStores = Object.entries(prod.prices).sort((a, b) => a[0].localeCompare(b[0]));
+        sortedStores.forEach(([store, price]) => {
+          let adjustedPrice = Math.round((price * regionFactor) / 10) * 10;
+          entries.push({
+            name: prod.name,
+            category: prod.category,
+            store: store,
+            price: adjustedPrice,
+            reporter: prod.reporter || "admin_canasta@xxx"
+          });
+        });
+      });
+      return entries;
+    };
 
-    loopItems.forEach(prod => {
-      let bestStore = "";
-      let bestPrice = Infinity;
+    let allItems = generateAllEntries();
+    const loopItems = [...allItems, ...allItems]; // Duplicar para efecto infinito fluido
 
-      for (const [store, price] of Object.entries(prod.prices)) {
-        let adjustedPrice = Math.round((price * regionFactor) / 10) * 10;
-        if (adjustedPrice < bestPrice) {
-          bestPrice = adjustedPrice;
-          bestStore = store;
-        }
-      }
-
-      let reporterText = prod.reporter ? `Aportado por: ${prod.reporter}` : 'Verificado por sistema';
-
+    loopItems.forEach(item => {
       htmlContent += `
         <div class="product-spotlight">
           <div class="product-details">
-            <h3>${prod.name}</h3>
-            <span class="badge">${prod.category} • 📍 ${userDetectedCommune}</span>
-            <span class="reporter-credit">👤 ${reporterText}</span>
+            <h3>${item.name}</h3>
+            <span class="badge">${item.category} • 📍 ${userDetectedCommune}</span>
+            <span class="reporter-credit">👤 Aportado por: ${item.reporter}</span>
           </div>
           <div class="best-deal">
-            <span class="price">$${bestPrice.toLocaleString('es-CL')}</span>
-            <span class="store-tag">🏆 ${bestStore}</span>
+            <span class="price">$${item.price.toLocaleString('es-CL')}</span>
+            <span class="store-tag">🛒 ${item.store}</span>
           </div>
         </div>
       `;
@@ -602,12 +651,31 @@
   function renderRanking(searchTerm) {
     const term = searchTerm.toLowerCase().trim();
     const container = document.getElementById('rankingResults');
+    const bannerContainer = document.getElementById('nationalRecordBanner');
     const foundProduct = productsMarketDB.find(item => item.name.toLowerCase().includes(term));
 
     if (!foundProduct) {
+      bannerContainer.innerHTML = '';
       container.innerHTML = `<p style="text-align:center; padding:25px; color:#777;">No hay registros para "${term}". ¡Reportalo en la pestaña superior!</p>`;
       return;
     }
+
+    let absoluteMinPrice = Infinity;
+    let absoluteMinStore = "";
+
+    for (const [store, price] of Object.entries(foundProduct.prices)) {
+      if (price < absoluteMinPrice) {
+        absoluteMinPrice = price;
+        absoluteMinStore = store;
+      }
+    }
+
+    let reporterText = foundProduct.reporter ? foundProduct.reporter : 'admin_canasta@xxx';
+
+    bannerContainer.innerHTML = `
+      <h4>🏆 Récord Nacional (Precio más bajo en Chile):</h4>
+      <p><strong>$${absoluteMinPrice.toLocaleString('es-CL')}</strong> en <strong>${absoluteMinStore}</strong> • 👤 Reportado por: <em>${reporterText}</em></p>
+    `;
 
     let regionFactor = getRegionFactor();
     let priceArray = [];
@@ -618,13 +686,11 @@
 
     priceArray.sort((a, b) => a.price - b.price);
 
-    let reporterText = foundProduct.reporter ? `Aportado por: ${foundProduct.reporter}` : 'Verificado por sistema';
-
     let html = '';
     priceArray.forEach((item, index) => {
       let isBest = index === 0;
       let podiumClass = isBest ? 'podium-1' : '';
-      let positionText = isBest ? '🥇 1er Lugar (Mejor Precio)' : `${index + 1}° Lugar`;
+      let positionText = isBest ? '🥇 1er Lugar Comunal (Mejor Precio)' : `${index + 1}° Lugar`;
 
       html += `
         <div class="ranking-card ${podiumClass}">
@@ -632,7 +698,7 @@
             <span class="position">${positionText}</span>
             <h3>${foundProduct.name}</h3>
             <span class="store-name">🛒 ${item.store} (${userDetectedCommune})</span>
-            <span class="reporter-credit">👤 ${reporterText}</span>
+            <span class="reporter-credit">👤 Aportado por: ${reporterText}</span>
             ${isBest ? '<br><span class="badge-best">¡Ahorras más aquí!</span>' : ''}
           </div>
           <div class="rank-price">
