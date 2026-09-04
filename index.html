@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Canasta Chile - Monitor Nacional y Geolocalización</title>
-<!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Tesseract.js para lectura de boletas -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   :root {
@@ -396,20 +394,21 @@
     transform: translateX(-50%) translateY(50px);
     background: #222;
     color: white;
-    padding: 10px 20px;
+    padding: 12px 24px;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     opacity: 0;
     transition: all 0.3s ease;
     pointer-events: none;
     z-index: 1000;
+    max-width: 90%;
+    text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- PANTALLA DE BLOQUEO OBLIGATORIA DE UBICACIÓN -->
 <div id="locationLockOverlay">
   <div class="lock-card">
     <h2>📡 Zona Geográfica Detectada</h2>
@@ -421,7 +420,6 @@
 <header>
   <div class="header-content">
     <h1>
-      <!-- Bandera de Chile en formato SVG garantizado para PC y Móvil -->
       <svg class="chile-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
         <rect width="900" height="600" fill="#d52b1e"/>
         <rect width="900" height="300" fill="#fff"/>
@@ -435,19 +433,16 @@
 </header>
 
 <main>
-  <!-- Barra de acciones rápidas (botones compactos) -->
   <div class="action-bar">
     <button class="action-btn" onclick="shareApp()">📤 Compartir App</button>
     <button class="action-btn" onclick="switchTab('feedback')">💬 Dejar Feedback</button>
   </div>
 
-  <!-- Pestañas -->
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchTab('search')">📊 Monitor y Ranking</button>
     <button class="tab-btn" onclick="switchTab('report')">📸 Reportar Precio</button>
   </div>
 
-  <!-- SECCIÓN 1: MONITOR & RANKING -->
   <div id="searchSection" class="section-content active">
     <div class="card">
       <h2>📡 Zona Geográfica Detectada</h2>
@@ -466,7 +461,6 @@
     <div class="card">
       <h2>🔍 Buscar Producto Protagonista</h2>
       
-      <!-- Buscador con botón circular X integrado -->
       <div class="search-input-wrapper">
         <input type="text" id="searchProduct" placeholder="Escribe un producto (ej. Leche, Arroz, Pan)..." oninput="handleSearchInput()" />
         <button id="clearSearchBtn" class="clear-btn" onclick="clearSearch()" title="Borrar búsqueda">✕</button>
@@ -481,7 +475,6 @@
         <button class="chip" onclick="setSearch('Aceite')">🌻 Aceite</button>
       </div>
 
-      <!-- VISTA INICIAL: CARRUSEL PROTAGONISTA -->
       <div id="tickerViewContainer">
         <div class="ticker-container">
           <div class="ticker-track" id="tickerTrack"></div>
@@ -489,12 +482,9 @@
         <p style="text-align: center; font-size: 0.75rem; color: #777; margin-top: 8px;">💡 Mantén presionado o pon el cursor para pausar el carrusel.</p>
       </div>
 
-      <!-- VISTA BÚSQUEDA: RANKING + RÉCORD NACIONAL -->
       <div id="rankingViewContainer" style="display: none;">
-        <!-- Banner del Precio Más Barato de Chile -->
         <div id="nationalRecordBanner" class="national-record-banner">
-          <!-- Inyección dinámica del récord nacional -->
-        </div>
+          </div>
 
         <h3 style="font-size: 0.95rem; margin-top: 15px; color: #444;">📊 Ranking de Comercios en tu Comuna:</h3>
         <div class="ranking-list" id="rankingResults"></div>
@@ -502,7 +492,6 @@
     </div>
   </div>
 
-  <!-- SECCIÓN 2: REPORTAR / ACLARAR PRECIO -->
   <div id="reportSection" class="section-content">
     <div class="card">
       <h2>📝 Aclaración o Reporte Vecinal</h2>
@@ -529,7 +518,6 @@
     </div>
   </div>
 
-  <!-- SECCIÓN 3: FEEDBACK Y SUGERENCIAS -->
   <div id="feedbackSection" class="section-content">
     <div class="card">
       <h2>💬 Buzón de Feedback y Sugerencias</h2>
@@ -594,11 +582,11 @@
     }
   }
 
-  function showToast(msg) {
+  function showToast(msg, duration = 3500) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3500);
+    setTimeout(() => t.classList.remove('show'), duration);
   }
 
   function requestUserLocation() {
@@ -877,30 +865,17 @@
       console.warn("Guardado local.");
     }
 
-    let existing = productsMarketDB.find(p => p.name.toLowerCase() === prodName.toLowerCase());
-
-    if (existing) {
-      existing.prices[store] = price;
-      existing.reporter = user;
-    } else {
-      productsMarketDB.push({
-        name: prodName,
-        category: "Reportes Comunidad",
-        prices: { [store]: price },
-        reporter: user
-      });
-    }
-
-    showToast('🎉 ¡Precio reportado y guardado en Supabase!');
+    // Limpiar campos del formulario
     document.getElementById('reportStore').value = '';
     document.getElementById('reportProductName').value = '';
     document.getElementById('reportPrice').value = '';
     document.getElementById('receiptImage').value = '';
 
-    initTickerView();
-    document.getElementById('searchProduct').value = prodName;
-    handleSearchInput();
+    // Volver a la pantalla principal (Monitor y Ranking)
     switchTab('search');
+
+    // Mostrar el mensaje solicitado en pantalla de forma destacada durante 5 segundos
+    showToast('Muchas gracias, su reporte se publicará luego de revisar.', 5000);
   }
 </script>
 </body>
