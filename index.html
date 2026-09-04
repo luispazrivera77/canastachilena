@@ -212,7 +212,7 @@
   .national-record-banner h4 { font-size: 0.9rem; color: #856404; margin-bottom: 4px; }
   .national-record-banner p { font-size: 0.85rem; color: #533f03; }
 
-  /* Contenedor del Ticker Carrusel */
+  /* Contenedor del Ticker Carrusel (Velocidad ajustada a 90s para lectura pausada) */
   .ticker-container {
     overflow: hidden;
     position: relative;
@@ -230,7 +230,7 @@
     gap: 12px;
     position: absolute;
     width: 100%;
-    animation: scrollProducts 45s linear infinite;
+    animation: scrollProducts 90s linear infinite;
   }
 
   .ticker-container:hover .ticker-track {
@@ -572,13 +572,11 @@
     return 1.0;
   }
 
-  // Carrusel que desglosa TODOS los comercios en orden alfabético
   function initTickerView() {
     const track = document.getElementById('tickerTrack');
     let regionFactor = getRegionFactor();
     let htmlContent = '';
 
-    // Generar tarjetas para cada producto y ordenar sus comercios alfabéticamente
     const generateAllEntries = () => {
       let entries = [];
       productsMarketDB.forEach(prod => {
@@ -598,7 +596,7 @@
     };
 
     let allItems = generateAllEntries();
-    const loopItems = [...allItems, ...allItems]; // Duplicar para efecto infinito fluido
+    const loopItems = [...allItems, ...allItems];
 
     loopItems.forEach(item => {
       htmlContent += `
