@@ -262,7 +262,7 @@
 
 <script>
   // ==========================================
-  // CONFIGURACIÓN DE SUPABASE (Segura)
+  // CONFIGURACIÓN DE SUPABASE
   // ==========================================
   const SUPABASE_URL = 'TU_SUPABASE_URL';
   const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
@@ -296,7 +296,7 @@
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+    setTimeout(() => t.classList.remove('show'), 3500);
   }
 
   // ==========================================
@@ -388,15 +388,26 @@
   }
 
   // ==========================================
-  // MOTOR OCR LOCAL CON TESSERACT.JS
+  // MOTOR OCR LOCAL CON PROGRESO VISIBLE
   // ==========================================
   async function processOCR(input) {
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      showToast('📸 Leyendo boleta con OCR...');
+      showToast('📸 Iniciando motor OCR...');
 
       try {
-        const worker = await Tesseract.createWorker('spa');
+        // Creamos el trabajador de Tesseract con monitoreo de progreso
+        const worker = await Tesseract.createWorker('spa', 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              let pct = Math.round(m.progress * 100);
+              showToast(`🔍 Leyendo boleta: ${pct}%`);
+            } else if (m.status === 'loading language traineddata') {
+              showToast('📥 Descargando paquete de idioma...');
+            }
+          }
+        });
+
         const ret = await worker.recognize(file);
         const text = ret.data.text;
         await worker.terminate();
@@ -534,7 +545,6 @@
     }
   }
 
-  // Inicializar al cargar la página
   window.addEventListener('DOMContentLoaded', () => {
     loadCloudPrices();
   });
