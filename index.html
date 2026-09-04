@@ -459,7 +459,7 @@
     </div>
 
     <div class="card">
-      <h2>🔍 Buscar Producto Protagonista</h2>
+      <h2>🔍 Buscar Producto</h2>
       
       <div class="search-input-wrapper">
         <input type="text" id="searchProduct" placeholder="Escribe un producto (ej. Leche, Arroz, Pan)..." oninput="handleSearchInput()" />
@@ -498,16 +498,19 @@
       <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Ayuda a tu comuna ingresando un precio verificado en tu local.</p>
 
       <label>Tu Usuario / Correo</label>
-      <input type="text" id="reportUser" value="admin_canasta@xxx" placeholder="Ej. admin_canasta@xxx" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
+      <input type="text" id="reportUser" value="luispaz77@gmail.com" placeholder="Ej. admin_canasta@xxx" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
       <label>Comercio / Supermercado</label>
       <input type="text" id="reportStore" placeholder="Ej. Jumbo Centro, Líder, Feria Libre..." style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
-      <label>Nombre del Producto</label>
-      <input type="text" id="reportProductName" placeholder="Ej. Leche Entera 1 Litro" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
+      <label>Producto a buscar en la boleta</label>
+      <input type="text" id="searchTargetProduct" placeholder="Ej. GALLETA COSTA MINI" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
+
+      <label>Nombre del Producto en el Sistema</label>
+      <input type="text" id="reportProductName" placeholder="Ej. Galletas Dulces" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
       <label>Precio Detectado ($ CLP)</label>
-      <input type="number" id="reportPrice" placeholder="Ej. 1090" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
+      <input type="number" id="reportPrice" placeholder="Ej. 780" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
       <div class="ocr-box">
         <label style="margin-bottom: 4px;">📷 Adjuntar Foto de Boleta (Opcional OCR)</label>
@@ -812,6 +815,7 @@
   async function processReportOCR(input) {
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      const targetQuery = document.getElementById('searchTargetProduct').value.toLowerCase().trim();
       showToast('📸 Leyendo boleta con OCR...');
 
       try {
@@ -821,21 +825,36 @@
         await worker.terminate();
 
         const lines = text.split('\n');
+        let matchedLineName = "";
+        let matchedPrice = null;
+
         for (let line of lines) {
           const priceMatch = line.match(/[\$]?\s*(\d{1,3}(?:\.\d{3})*|\d+)/);
-          if (priceMatch && line.length > 4) {
+          if (priceMatch && line.length > 3) {
             let cleanName = line.replace(/[\$0-9\.,]/g, '').trim();
             let cleanPrice = parseInt(priceMatch[1].replace(/\./g, ''));
-            if (cleanName.length > 2 && cleanPrice > 100 && cleanPrice < 50000) {
-              document.getElementById('reportProductName').value = cleanName;
-              document.getElementById('reportPrice').value = cleanPrice;
-              showToast('✅ ¡Datos detectados del ticket!');
+
+            if (targetQuery && line.toLowerCase().includes(targetQuery)) {
+              matchedLineName = cleanName;
+              matchedPrice = cleanPrice;
+              break;
+            } else if (!targetQuery && cleanName.length > 2 && cleanPrice > 100 && cleanPrice < 50000) {
+              matchedLineName = cleanName;
+              matchedPrice = cleanPrice;
               break;
             }
           }
         }
+
+        if (matchedPrice) {
+          if (matchedLineName) document.getElementById('reportProductName').value = matchedLineName;
+          document.getElementById('reportPrice').value = matchedPrice;
+          showToast('✅ ¡Producto y precio detectados de la boleta!');
+        } else {
+          showToast('⚠️ No se encontró coincidencia exacta, completa los datos manual.');
+        }
       } catch (err) {
-        console.warn('OCR omitido.');
+        console.warn('OCR omitido o error.');
       }
     }
   }
@@ -843,17 +862,19 @@
   async function submitCommunityReport() {
     const user = document.getElementById('reportUser').value.trim() || "admin_canasta@xxx";
     const store = document.getElementById('reportStore').value.trim();
+    const targetProd = document.getElementById('searchTargetProduct').value.trim();
     const prodName = document.getElementById('reportProductName').value.trim();
     const price = parseInt(document.getElementById('reportPrice').value);
 
     if (!store || !prodName || isNaN(price)) {
-      alert('Por favor completa todos los campos requeridos (Comercio, Producto y Precio).');
+      alert('Por favor completa los campos requeridos (Comercio, Nombre del producto y Precio).');
       return;
     }
 
     try {
       await supabaseClient.from('prices').insert([{
         product_name: prodName,
+        target_search: targetProd,
         category: "Reportes Comunidad",
         store: store,
         price: price,
@@ -865,16 +886,14 @@
       console.warn("Guardado local.");
     }
 
-    // Limpiar campos del formulario
     document.getElementById('reportStore').value = '';
+    document.getElementById('searchTargetProduct').value = '';
     document.getElementById('reportProductName').value = '';
     document.getElementById('reportPrice').value = '';
     document.getElementById('receiptImage').value = '';
 
-    // Volver a la pantalla principal (Monitor y Ranking)
     switchTab('search');
 
-    // Mostrar el mensaje solicitado en pantalla de forma destacada durante 5 segundos
     showToast('Muchas gracias, su reporte se publicará luego de revisar.', 5000);
   }
 </script>
