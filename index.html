@@ -262,18 +262,18 @@
 
 <script>
   // ==========================================
-  // CONFIGURACIÓN DE SUPABASE
+  // CONFIGURACIÓN DE SUPABASE (Segura)
   // ==========================================
   const SUPABASE_URL = 'TU_SUPABASE_URL';
   const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
   
-  let supabaseClient = null;
+  let cachedSupabase = null;
 
   function initSupabase() {
-    if (!supabaseClient && window.supabase) {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (!cachedSupabase && window.supabase) {
+      cachedSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
-    return supabaseClient;
+    return cachedSupabase;
   }
 
   let globalPricesCache = [];
@@ -452,7 +452,7 @@
   }
 
   // ==========================================
-  // SUBIR DATOS A LA NUBE (CON DEPURACIÓN VISUAL)
+  // SUBIR DATOS A LA NUBE
   // ==========================================
   async function submitPricesToCloud() {
     const db = initSupabase();
@@ -473,7 +473,6 @@
     showToast('☁️ Guardando en la red comunitaria...');
 
     try {
-      // 1. Registrar o buscar el comercio
       let { data: storeData, error: storeError } = await db
         .from('stores')
         .insert({ name: storeName, commune: commune, sector: sector })
@@ -487,7 +486,6 @@
       }
       const storeId = storeData.id;
 
-      // 2. Recorrer cada producto detectado por el OCR
       const rows = document.querySelectorAll('.scanned-row');
       for (let idx = 0; idx < rows.length; idx++) {
         const nameInput = document.getElementById(`scannedName_${idx}`);
@@ -499,8 +497,7 @@
         const price = parseInt(priceInput.value);
 
         if (name && !isNaN(price)) {
-          // Verificar si el producto ya existe
-          let { data: existingProd, error: findError } = await db
+          let { data: existingProd } = await db
             .from('products')
             .select('id')
             .ilike('name', name)
@@ -511,7 +508,6 @@
           if (existingProd) {
             productId = existingProd.id;
           } else {
-            // Crear el producto si no existe
             let { data: newProd, error: prodError } = await db
               .from('products')
               .insert({ name: name, category: 'Abarrotes', unit: 'Unidad' })
@@ -525,7 +521,6 @@
             productId = newProd.id;
           }
 
-          // Registrar el precio asociado
           let { error: priceError } = await db.from('prices').insert({
             product_id: productId,
             store_id: storeId,
