@@ -262,11 +262,19 @@
 
 <script>
   // ==========================================
-  // CONFIGURACIÓN DE SUPABASE
+  // CONFIGURACIÓN DE SUPABASE (Segura)
   // ==========================================
   const SUPABASE_URL = 'TU_SUPABASE_URL';
   const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  let supabaseClient = null;
+
+  function initSupabase() {
+    if (!supabaseClient && window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    return supabaseClient;
+  }
 
   let globalPricesCache = [];
 
@@ -295,13 +303,20 @@
   // CARGAR PRECIOS DESDE SUPABASE
   // ==========================================
   async function loadCloudPrices() {
+    const db = initSupabase();
     const commune = document.getElementById('filterCommune').value;
     const sector = document.getElementById('filterSector').value;
     const container = document.getElementById('priceResults');
+    
+    if (!db) {
+      container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">Error: Supabase no inicializado.</p>';
+      return;
+    }
+
     container.innerHTML = '<p style="text-align:center; color:#777; padding:20px;">Actualizando precios...</p>';
 
     try {
-      let query = supabaseClient
+      let query = db
         .from('prices')
         .select(`
           price,
@@ -430,9 +445,15 @@
   // SUBIR DATOS A LA NUBE (BLINDADO)
   // ==========================================
   async function submitPricesToCloud() {
+    const db = initSupabase();
     const storeName = document.getElementById('upStoreName').value.trim();
     const commune = document.getElementById('upCommune').value;
     const sector = document.getElementById('upSector').value;
+
+    if (!db) {
+      alert('Error: Base de datos no conectada.');
+      return;
+    }
 
     if (!storeName) {
       alert('Por favor ingresa el nombre del comercio.');
@@ -442,7 +463,7 @@
     showToast('☁️ Guardando en la red comunitaria...');
 
     try {
-      let { data: storeData, error: storeError } = await supabaseClient
+      let { data: storeData, error: storeError } = await db
         .from('stores')
         .insert({ name: storeName, commune: commune, sector: sector })
         .select()
@@ -465,7 +486,7 @@
         const price = parseInt(priceInput.value);
 
         if (name && !isNaN(price)) {
-          let { data: existingProd } = await supabaseClient
+          let { data: existingProd } = await db
             .from('products')
             .select('id')
             .ilike('name', name)
@@ -476,7 +497,7 @@
           if (existingProd) {
             productId = existingProd.id;
           } else {
-            let { data: newProd, error: prodError } = await supabaseClient
+            let { data: newProd, error: prodError } = await db
               .from('products')
               .insert({ name: name, category: 'Abarrotes', unit: 'Unidad' })
               .select()
@@ -489,7 +510,7 @@
             productId = newProd.id;
           }
 
-          let { error: priceError } = await supabaseClient.from('prices').insert({
+          let { error: priceError } = await db.from('prices').insert({
             product_id: productId,
             store_id: storeId,
             price: price
@@ -513,7 +534,10 @@
     }
   }
 
-  loadCloudPrices();
+  // Inicializar al cargar la página
+  window.addEventListener('DOMContentLoaded', () => {
+    loadCloudPrices();
+  });
 </script>
 </body>
 </html>
