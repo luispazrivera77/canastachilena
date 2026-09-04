@@ -1,16 +1,9 @@
-Para cumplir con tu requerimiento de que la aplicación exija y utilice el servicio de ubicación del dispositivo para geolocalizar automáticamente al usuario en su Región y Comuna exacta, integraremos la API de geolocalización del navegador junto con un sistema inteligente de coordenadas (GPS) mapeado a las comunas de Chile.
-
-Si el usuario rechaza o tiene desactivada la ubicación, la aplicación mostrará una pantalla de bloqueo obligatoria solicitando activar el servicio para continuar.
-
-Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubicación Obligatoria**:
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Canasta Chile - Ranking de Precios y Geolocalización</title>
+<title>Canasta Chile - Monitor Nacional y Geolocalización</title>
 <!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Tesseract.js para lectura de boletas -->
@@ -126,7 +119,7 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
 
   label { font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #444; }
 
-  select, input, button {
+  select, button {
     width: 100%;
     padding: 10px 12px;
     margin-bottom: 12px;
@@ -135,6 +128,45 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
     font-size: 0.95rem;
     background: #fff;
   }
+
+  /* Contenedor del Buscador con botón X limpio */
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .search-input-wrapper input {
+    width: 100%;
+    padding: 10px 35px 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #fff;
+    margin-bottom: 0;
+  }
+
+  .clear-btn {
+    position: absolute;
+    right: 10px;
+    background: #ced4da;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    font-weight: bold;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 0;
+  }
+
+  .clear-btn:hover { background: #6c757d; }
 
   button.primary-btn {
     background: var(--primary-color);
@@ -146,7 +178,55 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
   }
   button.primary-btn:hover { opacity: 0.9; }
 
-  /* Ranking Cards */
+  /* Contenedor del Ticker Carrusel */
+  .ticker-container {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    height: 380px;
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+  }
+
+  .ticker-track {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: absolute;
+    width: 100%;
+    animation: scrollProducts 35s linear infinite;
+  }
+
+  .ticker-container:hover .ticker-track {
+    animation-play-state: paused;
+  }
+
+  @keyframes scrollProducts {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
+
+  .product-spotlight {
+    background: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 6px solid var(--primary-color);
+  }
+
+  .product-details h3 { font-size: 1.05rem; color: #111; margin-bottom: 3px; }
+  .product-details .badge { font-size: 0.75rem; color: #555; background: #e9ecef; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+
+  .best-deal { text-align: right; }
+  .best-deal .price { font-size: 1.20rem; font-weight: 800; color: var(--primary-color); display: block; }
+  .best-deal .store-tag { font-size: 0.75rem; font-weight: 600; color: #d90429; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+
+  /* Ranking Cards para búsqueda */
   .ranking-list {
     display: flex;
     flex-direction: column;
@@ -178,7 +258,6 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
   }
 
   .podium-1 .rank-info .position { color: var(--primary-color); }
-
   .rank-info h3 { font-size: 1.05rem; color: #212529; }
   .rank-info .store-name { font-size: 0.85rem; color: #495057; font-weight: 600; }
 
@@ -202,7 +281,6 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
     margin-top: 4px;
   }
 
-  /* Sugerencias */
   .quick-chips {
     display: flex;
     gap: 6px;
@@ -260,54 +338,71 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
 <div id="locationLockOverlay">
   <div class="lock-card">
     <h2>📍 Ubicación Obligatoria</h2>
-    <p>Para mostrarte el ranking de precios exacto y competitivo de tu zona en Chile, necesitamos validar tu ubicación geográfica.</p>
+    <p>Para mostrarte el monitoreo de precios exacto y competitivo de tu zona en Chile, necesitamos validar tu ubicación GPS.</p>
     <button class="primary-btn" onclick="requestUserLocation()">Habilitar Ubicación GPS</button>
   </div>
 </div>
 
 <header>
-  <h1>🇨🇱 Canasta Chile - Precios Comunitarios</h1>
-  <p>Ranking transparente validado por tu ubicación actual</p>
+  <h1>🇨🇱 Canasta Chile - Monitor Nacional</h1>
+  <p>El mejor precio de tu Comuna en tiempo real</p>
 </header>
 
 <main>
   <!-- Pestañas -->
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('search')">📊 Consultar Ranking</button>
+    <button class="tab-btn active" onclick="switchTab('search')">📊 Monitor y Ranking</button>
     <button class="tab-btn" onclick="switchTab('report')">📸 Reportar / Aclarar Precio</button>
   </div>
 
-  <!-- SECCIÓN 1: CONSULTAR RANKING -->
+  <!-- SECCIÓN 1: MONITOR & RANKING -->
   <div id="searchSection" class="section-content active">
     <div class="card">
       <h2>📍 Zona Geográfica Detectada</h2>
       <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
           <label>Región Geolocalizada</label>
-          <input type="text" id="displayRegion" readonly style="background:#e9ecef; font-weight:600;" />
+          <input type="text" id="displayRegion" readonly style="background:#e9ecef; font-weight:600; padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%;" />
         </div>
         <div style="flex: 1;">
           <label>Comuna Geolocalizada</label>
-          <input type="text" id="displayCommune" readonly style="background:#e9ecef; font-weight:600;" />
+          <input type="text" id="displayCommune" readonly style="background:#e9ecef; font-weight:600; padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%;" />
         </div>
       </div>
     </div>
 
     <div class="card">
       <h2>🔍 Buscar Producto Protagonista</h2>
-      <input type="text" id="searchProduct" placeholder="Escribe un producto (ej. Leche, Arroz, Pan)..." oninput="renderRanking()" />
+      
+      <!-- Buscador con botón circular X integrado -->
+      <div class="search-input-wrapper">
+        <input type="text" id="searchProduct" placeholder="Escribe un producto (ej. Leche, Arroz, Pan)..." oninput="handleSearchInput()" />
+        <button id="clearSearchBtn" class="clear-btn" onclick="clearSearch()" title="Borrar búsqueda">✕</button>
+      </div>
       
       <div class="quick-chips">
         <span style="font-size:0.8rem; align-self:center; font-weight:600; color:#555;">Sugerencias:</span>
-        <button class="chip active" onclick="setSearch('Leche')">🥛 Leche</button>
+        <button class="chip" onclick="setSearch('Leche')">🥛 Leche</button>
         <button class="chip" onclick="setSearch('Arroz')">🌾 Arroz</button>
         <button class="chip" onclick="setSearch('Pan')">🥖 Pan</button>
         <button class="chip" onclick="setSearch('Huevos')">🥚 Huevos</button>
         <button class="chip" onclick="setSearch('Aceite')">🌻 Aceite</button>
       </div>
 
-      <h3 style="font-size: 0.95rem; margin-top: 15px; color: #444;">📊 Ranking de Comercios (Más barato a más caro):</h3>
-      <div class="ranking-list" id="rankingResults"></div>
+      <!-- VISTA INICIAL: CARRUSEL PROTAGONISTA -->
+      <div id="tickerViewContainer">
+        <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: #444;">🏆 Productos Esenciales en Movimiento (Mejor Precio Local):</h3>
+        <div class="ticker-container">
+          <div class="ticker-track" id="tickerTrack"></div>
+        </div>
+        <p style="text-align: center; font-size: 0.75rem; color: #777; margin-top: 8px;">💡 Mantén presionado o pon el cursor para pausar el carrusel.</p>
+      </div>
+
+      <!-- VISTA BÚSQUEDA: RANKING -->
+      <div id="rankingViewContainer" style="display: none;">
+        <h3 style="font-size: 0.95rem; margin-top: 15px; color: #444;">📊 Ranking de Comercios (Más barato a más caro):</h3>
+        <div class="ranking-list" id="rankingResults"></div>
+      </div>
     </div>
   </div>
 
@@ -318,13 +413,13 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
       <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Ayuda a tu comuna ingresando un precio verificado en tu local.</p>
 
       <label>Comercio / Supermercado</label>
-      <input type="text" id="reportStore" placeholder="Ej. Jumbo Centro, Líder, Feria Libre..." />
+      <input type="text" id="reportStore" placeholder="Ej. Jumbo Centro, Líder, Feria Libre..." style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
       <label>Nombre del Producto</label>
-      <input type="text" id="reportProductName" placeholder="Ej. Leche Entera 1 Litro" />
+      <input type="text" id="reportProductName" placeholder="Ej. Leche Entera 1 Litro" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
       <label>Precio Detectado ($ CLP)</label>
-      <input type="number" id="reportPrice" placeholder="Ej. 1090" />
+      <input type="number" id="reportPrice" placeholder="Ej. 1090" style="padding:10px; border:1px solid #ced4da; border-radius:6px; width:100%; margin-bottom:12px;" />
 
       <div class="ocr-box">
         <label style="margin-bottom: 4px;">📷 Adjuntar Foto de Boleta (Opcional OCR)</label>
@@ -339,25 +434,6 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
 <div id="toast" class="toast"></div>
 
 <script>
-  const chileGeoData = {
-    "Arica y Parinacota": ["Arica", "Camarones", "Putre", "General Lagos"],
-    "Tarapacá": ["Iquique", "Alto Hospicio", "Pozo Almonte", "Camiña", "Colchane", "Pica", "Huara"],
-    "Antofagasta": ["Antofagasta", "Mejillones", "Sierra Gorda", "Taltal", "Calama", "Ollagüe", "San Pedro de Atacama", "Tocopilla", "María Elena"],
-    "Atacama": ["Copiapó", "Caldera", "Tierra Amarilla", "Chañaral", "Diego de Almagro", "Vallenar", "Alto del Carmen", "Freirina", "Huasco"],
-    "Coquimbo": ["La Serena", "Coquimbo", "Andacollo", "La Higuera", "Paihuano", "Vicuña", "Illapel", "Canela", "Los Vilos", "Salamanca", "Ovalle", "Combarbalá", "Monte Patria", "Punitaqui", "Río Hurtado"],
-    "Valparaíso": ["Valparaíso", "Casablanca", "Concón", "Juan Fernández", "Puchuncaví", "Quintero", "Viña del Mar", "Isla de Pascua", "Los Andes", "Calle Larga", "San Esteban", "Rinconada", "La Ligua", "Cabildo", "Papudo", "Petorca", "Zapallar", "Quillota", "Calera", "Hijuelas", "La Cruz", "Nogales", "San Antonio", "Algarrobo", "Cartagena", "El Quisco", "El Tabo", "Santo Domingo", "San Felipe", "Catemu", "Llaillay", "Panquehue", "Putaendo", "Limache", "Quilpué", "Villa Alemana", "Olmué"],
-    "Metropolitana de Santiago": ["Santiago", "Cerrillos", "Cerro Navia", "Conchalí", "El Bosque", "Estación Central", "Huechuraba", "Independencia", "La Cisterna", "La Florida", "La Granja", "La Pintana", "La Reina", "Las Condes", "Lo Barnechea", "Lo Espejo", "Lo Prado", "Macul", "Maipú", "Ñuñoa", "Pedro Aguirre Cerda", "Peñalolén", "Providencia", "Pudahuel", "Quilicura", "Quinta Normal", "Recoleta", "Renca", "San Joaquín", "San Miguel", "San Ramón", "Vitacura", "Puente Alto", "Pirque", "San José de Maipo", "Colina", "Lampa", "Tiltil", "San Bernardo", "Buin", "Calera de Tango", "Paine", "Melipilla", "Alhué", "Curacaví", "María Pinto", "San Pedro", "Talagante", "El Monte", "Isla de Maipo", "Padre Hurtado", "Peñaflor"],
-    "O'Higgins": ["Rancagua", "Codegua", "Coinco", "Coltauco", "Doñihue", "Graneros", "Las Cabras", "Machalí", "Malloa", "Mostazal", "Olivar", "Peumo", "Pichidegua", "Quinta de Tilcoco", "Rengo", "Requínoa", "San Vicente", "Pichilemu", "La Estrella", "Litueche", "Marchihue", "Navidad", "Paredones", "San Fernando", "Chépica", "Chimbarongo", "Lolol", "Nancagua", "Palmilla", "Peralillo", "Placilla", "Pumanque", "Santa Cruz"],
-    "Maule": ["Talca", "Constitución", "Curepto", "Empedrado", "Maule", "Pelarco", "Pencahue", "Río Claro", "San Clemente", "San Rafael", "Cauquenes", "Chanco", "Pelluhue", "Curicó", "Hualañé", "Licantén", "Molina", "Rauco", "Romeral", "Sagrada Familia", "Teno", "Vichuquén", "Linares", "Colbún", "Longaví", "Parral", "Retiro", "San Javier", "Villa Alegre", "Yerbas Buenas"],
-    "Ñuble": ["Chillán", "Bulnes", "Cobquecura", "Coelemu", "Coihueco", "El Carmen", "Ninhue", "Ñiquén", "Pemuco", "Pinto", "Portezuelo", "Quillón", "Quirihue", "Ránquil", "San Carlos", "San Fabián", "San Ignacio", "San Nicolás", "Treguaco", "Yungay"],
-    "Biobío": ["Concepción", "Coronel", "Chiguayante", "Florida", "Hualqui", "Lota", "Penco", "San Pedro de la Paz", "Santa Juana", "Talcahuano", "Tomé", "Hualpén", "Lebu", "Arauco", "Cañete", "Contulmo", "Curanilahue", "Los Álamos", "Tirúa", "Los Ángeles", "Antuco", "Cabrero", "Laja", "Mulchén", "Nacimiento", "Negrete", "Quilaco", "Quilleco", "San Rosendo", "Santa Bárbara", "Tucapel", "Yumbel", "Alto Biobío"],
-    "La Araucanía": ["Temuco", "Carahue", "Cunco", "Curarrehue", "Freire", "Galvarino", "Gorbea", "Lautaro", "Loncoche", "Melipeuco", "Nueva Imperial", "Padre Las Casas", "Perquenco", "Pitrufquén", "Pucón", "Saavedra", "Teodoro Schmidt", "Toltén", "Vilcún", "Villarrica", "Angol", "Collipulli", "Curacautín", "Ercilla", "Lonquimay", "Los Sauces", "Lumaco", "Purén", "Renaico", "Traiguén", "Victoria"],
-    "Los Ríos": ["Valdivia", "Corral", "Lanco", "Los Lagos", "Máfil", "Mariquina", "Paillaco", "Panguipulli", "La Unión", "Río Bueno", "Futrono", "Lago Ranco"],
-    "Los Lagos": ["Puerto Montt", "Calbuco", "Cochamó", "Fresia", "Frutillar", "Los Muermos", "Llanquihue", "Maullín", "Puerto Varas", "Castro", "Ancud", "Chonchi", "Curaco de Vélez", "Dalcahue", "Puqueldón", "Queilén", "Quellón", "Quemchi", "Osorno", "Puerto Octay", "Purranque", "Puyehue", "Río Negro", "San Juan de la Costa", "San Pablo", "Chaitén", "Futaleufú", "Hualaihué", "Palena"],
-    "Aysén": ["Coihaique", "Lago Verde", "Aysén", "Cisnes", "Guaitecas", "Cochrane", "O'Higgins", "Tortel", "Chile Chico", "Río Ibáñez"],
-    "Magallanes": ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
-  };
-
   let userDetectedRegion = "Coquimbo";
   let userDetectedCommune = "La Serena";
 
@@ -390,7 +466,6 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
     if (tabName === 'search') {
       document.querySelectorAll('.tab-btn')[0].classList.add('active');
       document.getElementById('searchSection').classList.add('active');
-      renderRanking();
     } else {
       document.querySelectorAll('.tab-btn')[1].classList.add('active');
       document.getElementById('reportSection').classList.add('active');
@@ -404,17 +479,13 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // Solicitud Obligatoria de Geolocalización GPS
   function requestUserLocation() {
     if ("geolocation" in navigator) {
       showToast("📍 Obteniendo ubicación GPS...");
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
 
-          // Aproximación inteligente para Chile basada en coordenadas geográficas
-          // Coordenadas aproximadas para La Serena / Coquimbo
           if (lat >= -30.1 && lat <= -29.8) {
             userDetectedRegion = "Coquimbo";
             userDetectedCommune = "La Serena";
@@ -425,18 +496,16 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
             userDetectedRegion = "Metropolitana de Santiago";
             userDetectedCommune = "Santiago";
           } else {
-            // Valor por defecto general dentro de Chile si el GPS está en otra zona
             userDetectedRegion = "Coquimbo";
             userDetectedCommune = "La Serena";
           }
 
-          // Rellenar campos y ocultar pantalla de bloqueo
           document.getElementById('displayRegion').value = userDetectedRegion;
           document.getElementById('displayCommune').value = userDetectedCommune;
           document.getElementById('locationLockOverlay').style.display = 'none';
 
           showToast("✅ ¡Ubicación validada con éxito!");
-          renderRanking();
+          initTickerView();
         },
         (error) => {
           alert("El servicio de ubicación es obligatorio para usar Canasta Chile. Por favor actívalo en tu dispositivo.");
@@ -448,36 +517,93 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
     }
   }
 
+  function getRegionFactor() {
+    if (["Arica y Parinacota", "Tarapacá", "Magallanes", "Aysén"].includes(userDetectedRegion)) {
+      return 1.08;
+    } else if (userDetectedRegion === "Metropolitana de Santiago") {
+      return 1.03;
+    }
+    return 1.0;
+  }
+
+  // Inicializar vista del Carrusel en movimiento
+  function initTickerView() {
+    const track = document.getElementById('tickerTrack');
+    let regionFactor = getRegionFactor();
+    let htmlContent = '';
+
+    const loopItems = [...productsMarketDB, ...productsMarketDB];
+
+    loopItems.forEach(prod => {
+      let bestStore = "";
+      let bestPrice = Infinity;
+
+      for (const [store, price] of Object.entries(prod.prices)) {
+        let adjustedPrice = Math.round((price * regionFactor) / 10) * 10;
+        if (adjustedPrice < bestPrice) {
+          bestPrice = adjustedPrice;
+          bestStore = store;
+        }
+      }
+
+      htmlContent += `
+        <div class="product-spotlight">
+          <div class="product-details">
+            <h3>${prod.name}</h3>
+            <span class="badge">${prod.category} • 📍 ${userDetectedCommune}</span>
+          </div>
+          <div class="best-deal">
+            <span class="price">$${bestPrice.toLocaleString('es-CL')}</span>
+            <span class="store-tag">🏆 ${bestStore}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    track.innerHTML = htmlContent;
+  }
+
+  // Manejar entrada de búsqueda y mostrar botón X de borrado
+  function handleSearchInput() {
+    const val = document.getElementById('searchProduct').value;
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    if (val.length > 0) {
+      clearBtn.style.display = 'flex';
+      document.getElementById('tickerViewContainer').style.display = 'none';
+      document.getElementById('rankingViewContainer').style.display = 'block';
+      renderRanking(val);
+    } else {
+      clearBtn.style.display = 'none';
+      document.getElementById('rankingViewContainer').style.display = 'none';
+      document.getElementById('tickerViewContainer').style.display = 'block';
+    }
+  }
+
   function setSearch(term) {
     document.getElementById('searchProduct').value = term;
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     event.target.classList.add('active');
-    renderRanking();
+    handleSearchInput();
   }
 
-  function renderRanking() {
-    const searchTerm = document.getElementById('searchProduct').value.toLowerCase().trim();
+  function clearSearch() {
+    document.getElementById('searchProduct').value = '';
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    handleSearchInput();
+  }
+
+  function renderRanking(searchTerm) {
+    const term = searchTerm.toLowerCase().trim();
     const container = document.getElementById('rankingResults');
-
-    if (!searchTerm) {
-      container.innerHTML = '<p style="text-align:center; padding:25px; color:#777;">👆 Escribe un producto o selecciona una sugerencia para ver el ranking.</p>';
-      return;
-    }
-
-    const foundProduct = productsMarketDB.find(item => item.name.toLowerCase().includes(searchTerm));
+    const foundProduct = productsMarketDB.find(item => item.name.toLowerCase().includes(term));
 
     if (!foundProduct) {
-      container.innerHTML = `<p style="text-align:center; padding:25px; color:#777;">No hay registros para "${searchTerm}". ¡Reportalo en la pestaña superior!</p>`;
+      container.innerHTML = `<p style="text-align:center; padding:25px; color:#777;">No hay registros para "${term}". ¡Reportalo en la pestaña superior!</p>`;
       return;
     }
 
-    let regionFactor = 1.0;
-    if (["Arica y Parinacota", "Tarapacá", "Magallanes", "Aysén"].includes(userDetectedRegion)) {
-      regionFactor = 1.08;
-    } else if (userDetectedRegion === "Metropolitana de Santiago") {
-      regionFactor = 1.03;
-    }
-
+    let regionFactor = getRegionFactor();
     let priceArray = [];
     for (const [store, price] of Object.entries(foundProduct.prices)) {
       let finalPrice = Math.round((price * regionFactor) / 10) * 10;
@@ -570,14 +696,9 @@ Aquí tienes el código completo integrado con el **Bloqueo y Detección de Ubic
     document.getElementById('receiptImage').value = '';
 
     document.getElementById('searchProduct').value = prodName;
+    handleSearchInput();
     switchTab('search');
   }
-
-  window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('searchProduct').value = "Leche";
-  });
 </script>
 </body>
 </html>
-
-```
