@@ -1,1 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Canasta Comunitaria Chile - Precios Reales</title>
+<!-- Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Tesseract.js para OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  :root {
+    --primary-color: #008751;
+    --accent-color: #ffcc00;
+    --bg-color: #f4f6f8;
+    --card-bg: #ffffff;
+    --text-color: #222222;
+    --border-color: #dddddd;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+  body {
+    background: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--primary-color);
+    color: white;
+    padding: 1.2rem;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header p { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
+
+  main {
+    flex: 1;
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 15px;
+    padding-bottom: 80px;
+  }
+
+  .nav-tabs {
+    display: flex;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    background: none;
+    border: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .section-content { display: none; }
+  .section-content.active { display: block; }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  h2 { font-size: 1.1rem; margin-bottom: 12px; color: #333; }
+
+  label { font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #444; }
+
+  select, input, button {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #fff;
+  }
+
+  button.primary-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  button.primary-btn:hover { opacity: 0.9; }
+
+  .price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .price-item:last-child { border-bottom: none; }
+
+  .product-info h4 { font-size: 0.95rem; color: #222; }
+  .product-info span { font-size: 0.75rem; color: #777; }
+
+  .price-tag {
+    text-align: right;
+  }
+  .price-tag .amount { font-weight: bold; color: var(--primary-color); font-size: 1rem; }
+  .price-tag .store { font-size: 0.75rem; color: #555; display: block; }
+
+  .ocr-preview-box {
+    background: #f9f9f9;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  .scanned-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 8px;
+  }
+
+  .scanned-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .scanned-row input { margin-bottom: 0; }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(50px);
+    background: #222;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 Canasta Comunitaria Chile</h1>
+  <p>Precios reales compartidos por vecinos</p>
+</header>
+
+<main>
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('search')">🔍 Buscar Precios</button>
+    <button class="tab-btn" onclick="switchTab('upload')">📸 Subir Boleta</button>
+  </div>
+
+  <!-- SECCIÓN 1: BUSCAR PRECIOS -->
+  <div id="searchSection" class="section-content active">
+    <div class="card">
+      <h2>Ubicación de Consulta</h2>
+      <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <label>Comuna / Localidad</label>
+          <select id="filterCommune" onchange="loadCloudPrices()">
+            <option value="La Serena">La Serena</option>
+            <option value="Coquimbo">Coquimbo</option>
+            <option value="Ovalle">Ovalle</option>
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <label>Sector / Barrio</label>
+          <select id="filterSector" onchange="loadCloudPrices()">
+            <option value="Todos">Todos los sectores</option>
+            <option value="Centro">Centro</option>
+            <option value="Las Compañías">Las Compañías</option>
+            <option value="Peñuelas">Peñuelas</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Comparativa Canasta Básica</h2>
+      <input type="text" id="searchProduct" placeholder="Buscar producto (ej. Leche, Arroz, Pan)..." oninput="filterLocalMemory()" />
+      <div id="priceResults">
+        <p style="text-align:center; color:#777; padding:20px;">Cargando precios de la nube...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: SUBIR BOLETA / ESCANEAR -->
+  <div id="uploadSection" class="section-content">
+    <div class="card">
+      <h2>1. Selecciona el Comercio</h2>
+      <label>Comuna</label>
+      <select id="upCommune">
+        <option value="La Serena">La Serena</option>
+        <option value="Coquimbo">Coquimbo</option>
+        <option value="Ovalle">Ovalle</option>
+      </select>
+
+      <label>Sector</label>
+      <select id="upSector">
+        <option value="Centro">Centro</option>
+        <option value="Las Compañías">Las Compañías</option>
+        <option value="Peñuelas">Peñuelas</option>
+      </select>
+
+      <label>Supermercado / Local</label>
+      <input type="text" id="upStoreName" placeholder="Ej. Jumbo Centro, Lider, Feria..." />
+    </div>
+
+    <div class="card">
+      <h2>2. Capturar Boleta</h2>
+      <div class="ocr-preview-box">
+        <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Toma una foto clara o sube el ticket impreso</p>
+        <input type="file" accept="image/*" id="receiptFile" onchange="processOCR(this)" style="margin-bottom:0;" />
+      </div>
+
+      <div id="ocrEditor" style="display: none;">
+        <label style="margin-top: 15px;">3. Revisión Inteligente (OCR detectó esto):</label>
+        <div class="scanned-list" id="scannedItemsContainer"></div>
+        <button class="primary-btn" onclick="submitPricesToCloud()">🚀 Compartir Precios con la Comunidad</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // ==========================================
+  // CONFIGURACIÓN DE SUPABASE (Reemplaza con tus datos)
+  // ==========================================
+  const SUPABASE_URL = 'TU_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let globalPricesCache = [];
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+
+    if (tabName === 'search') {
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      document.getElementById('searchSection').classList.add('active');
+      loadCloudPrices();
+    } else {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      document.getElementById('uploadSection').classList.add('active');
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ==========================================
+  // CARGAR PRECIOS DESDE SUPABASE
+  // ==========================================
+  async function loadCloudPrices() {
+    const commune = document.getElementById('filterCommune').value;
+    const sector = document.getElementById('filterSector').value;
+    const container = document.getElementById('priceResults');
+    container.innerHTML = '<p style="text-align:center; color:#777; padding:20px;">Actualizando precios...</p>';
+
+    try {
+      // Consulta con relación (Join entre prices, products y stores)
+      let query = supabaseClient
+        .from('prices')
+        .select(`
+          price,
+          report_date,
+          stores ( name, commune, sector ),
+          products ( name, category )
+        `)
+        .order('report_date', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Transformar datos para la interfaz
+      globalPricesCache = data.map(item => ({
+        name: item.products ? item.products.name : 'Producto General',
+        store: item.stores ? item.stores.name : 'Comercio Local',
+        commune: item.stores ? item.stores.commune : commune,
+        sector: item.stores ? item.stores.sector : 'Centro',
+        price: item.price,
+        date: item.report_date
+      }));
+
+      filterLocalMemory();
+
+    } catch (err) {
+      console.error('Error cargando de Supabase:', err);
+      container.innerHTML = '<p style="text-align:center; color:red; padding:20px;">Error al conectar con la base de datos cloud.</p>';
+    }
+  }
+
+  function filterLocalMemory() {
+    const commune = document.getElementById('filterCommune').value;
+    const sector = document.getElementById('filterSector').value;
+    const query = document.getElementById('searchProduct').value.toLowerCase();
+
+    const filtered = globalPricesCache.filter(item => {
+      const matchCommune = item.commune === commune;
+      const matchSector = sector === 'Todos' || item.sector === sector;
+      const matchQuery = item.name.toLowerCase().includes(query);
+      return matchCommune && matchSector && matchQuery;
+    });
+
+    renderPricesUI(filtered);
+  }
+
+  function renderPricesUI(data) {
+    const container = document.getElementById('priceResults');
+    container.innerHTML = '';
+
+    if (data.length === 0) {
+      container.innerHTML = '<p style="text-align:center; color:#777; padding:20px;">No hay precios registrados para esta selección.</p>';
+      return;
+    }
+
+    data.forEach(item => {
+      container.innerHTML += `
+        <div class="price-item">
+          <div class="product-info">
+            <h4>${item.name}</h4>
+            <span>📍 ${item.store} (${item.sector}) • ${item.date}</span>
+          </div>
+          <div class="price-tag">
+            <span class="amount">$${item.price.toLocaleString('es-CL')}</span>
+            <span class="store">${item.commune}</span>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // ==========================================
+  // MOTOR OCR LOCAL CON TESSERACT.JS
+  // ==========================================
+  async function processOCR(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      showToast('📸 Leyendo boleta con OCR...');
+
+      try {
+        const worker = await Tesseract.createWorker('spa');
+        const ret = await worker.recognize(file);
+        const text = ret.data.text;
+        await worker.terminate();
+
+        const lines = text.split('\n');
+        let extractedItems = [];
+
+        lines.forEach(line => {
+          const priceMatch = line.match(/[\$]?\s*(\d{1,3}(?:\.\d{3})*|\d+)/);
+          if (priceMatch && line.length > 4) {
+            let cleanName = line.replace(/[\$0-9\.,]/g, '').trim();
+            let cleanPrice = parseInt(priceMatch[1].replace(/\./g, ''));
+
+            if (cleanName.length > 2 && cleanPrice > 100 && cleanPrice < 50000) {
+              extractedItems.push({ name: cleanName, price: cleanPrice });
+            }
+          }
+        });
+
+        if (extractedItems.length === 0) {
+          extractedItems = [{ name: "Item detectado (Editar nombre)", price: 1000 }];
+        }
+
+        document.getElementById('ocrEditor').style.display = 'block';
+        const scannedContainer = document.getElementById('scannedItemsContainer');
+        scannedContainer.innerHTML = '';
+
+        extractedItems.forEach((el, idx) => {
+          scannedContainer.innerHTML += `
+            <div class="scanned-row">
+              <input type="text" value="${el.name}" id="scannedName_${idx}" style="flex:2;" />
+              <input type="number" value="${el.price}" id="scannedPrice_${idx}" style="flex:1;" />
+            </div>
+          `;
+        });
+
+        showToast('✅ ¡Lectura completa! Revisa y comparte.');
+      } catch (err) {
+        console.error(err);
+        showToast('❌ Error al procesar la imagen.');
+      }
+    }
+  }
+
+  // ==========================================
+  // SUBIR DATOS A LA NUBE (SUPABASE)
+  // ==========================================
+  async function submitPricesToCloud() {
+    const storeName = document.getElementById('upStoreName').value.trim();
+    const commune = document.getElementById('upCommune').value;
+    const sector = document.getElementById('upSector').value;
+
+    if (!storeName) {
+      alert('Por favor ingresa el nombre del comercio.');
+      return;
+    }
+
+    showToast('☁️ Guardando en la red comunitaria...');
+
+    try {
+      // 1. Registrar o buscar el comercio en Supabase
+      let { data: storeData, error: storeError } = await supabaseClient
+        .from('stores')
+        .insert({ name: storeName, commune: commune, sector: sector })
+        .select()
+        .single();
+
+      if (storeError) throw storeError;
+      const storeId = storeData.id;
+
+      // 2. Procesar filas escaneadas
+      const rows = document.querySelectorAll('.scanned-row');
+      for (let idx = 0; idx < rows.length; idx++) {
+        const name = document.getElementById(`scannedName_${idx}`).value;
+        const price = parseInt(document.getElementById(`scannedPrice_${idx}`).value);
+
+        if (name && price) {
+          // Crear o buscar el producto básico
+          let { data: prodData, error: prodError } = await supabaseClient
+            .from('products')
+            .insert({ name: name, category: 'Abarrotes', unit: 'Unidad' })
+            .select()
+            .single();
+
+          if (prodError) continue;
+
+          // Registrar el precio reportado
+          await supabaseClient.from('prices').insert({
+            product_id: prodData.id,
+            store_id: storeId,
+            price: price
+          });
+        }
+      }
+
+      showToast('🎉 ¡Precios publicados con éxito!');
+      document.getElementById('ocrEditor').style.display = 'none';
+      document.getElementById('receiptFile').value = '';
+      document.getElementById('upStoreName').value = '';
+      switchTab('search');
+
+    } catch (err) {
+      console.error('Error al guardar:', err);
+      showToast('❌ Error al sincronizar con la nube.');
+    }
+  }
+
+  // Inicializar cargando datos al abrir
+  loadCloudPrices();
+</script>
+</body>
+</html>
