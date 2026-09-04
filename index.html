@@ -262,7 +262,7 @@
 
 <script>
   // ==========================================
-  // CONFIGURACIÓN DE SUPABASE (Reemplaza con tus datos)
+  // CONFIGURACIÓN DE SUPABASE
   // ==========================================
   const SUPABASE_URL = 'TU_SUPABASE_URL';
   const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
@@ -301,7 +301,6 @@
     container.innerHTML = '<p style="text-align:center; color:#777; padding:20px;">Actualizando precios...</p>';
 
     try {
-      // Consulta con relación (Join entre prices, products y stores)
       let query = supabaseClient
         .from('prices')
         .select(`
@@ -316,7 +315,6 @@
 
       if (error) throw error;
 
-      // Transformar datos para la interfaz
       globalPricesCache = data.map(item => ({
         name: item.products ? item.products.name : 'Producto General',
         store: item.stores ? item.stores.name : 'Comercio Local',
@@ -429,7 +427,7 @@
   }
 
   // ==========================================
-  // SUBIR DATOS A LA NUBE (SUPABASE)
+  // SUBIR DATOS A LA NUBE (BLINDADO)
   // ==========================================
   async function submitPricesToCloud() {
     const storeName = document.getElementById('upStoreName').value.trim();
@@ -444,38 +442,62 @@
     showToast('☁️ Guardando en la red comunitaria...');
 
     try {
-      // 1. Registrar o buscar el comercio en Supabase
       let { data: storeData, error: storeError } = await supabaseClient
         .from('stores')
         .insert({ name: storeName, commune: commune, sector: sector })
         .select()
         .single();
 
-      if (storeError) throw storeError;
+      if (storeError) {
+        console.error("Error en Store:", storeError);
+        throw new Error("No se pudo registrar el comercio.");
+      }
       const storeId = storeData.id;
 
-      // 2. Procesar filas escaneadas
       const rows = document.querySelectorAll('.scanned-row');
       for (let idx = 0; idx < rows.length; idx++) {
-        const name = document.getElementById(`scannedName_${idx}`).value;
-        const price = parseInt(document.getElementById(`scannedPrice_${idx}`).value);
+        const nameInput = document.getElementById(`scannedName_${idx}`);
+        const priceInput = document.getElementById(`scannedPrice_${idx}`);
+        
+        if (!nameInput || !priceInput) continue;
+        
+        const name = nameInput.value.trim();
+        const price = parseInt(priceInput.value);
 
-        if (name && price) {
-          // Crear o buscar el producto básico
-          let { data: prodData, error: prodError } = await supabaseClient
+        if (name && !isNaN(price)) {
+          let { data: existingProd } = await supabaseClient
             .from('products')
-            .insert({ name: name, category: 'Abarrotes', unit: 'Unidad' })
-            .select()
-            .single();
+            .select('id')
+            .ilike('name', name)
+            .maybeSingle();
 
-          if (prodError) continue;
+          let productId;
 
-          // Registrar el precio reportado
-          await supabaseClient.from('prices').insert({
-            product_id: prodData.id,
+          if (existingProd) {
+            productId = existingProd.id;
+          } else {
+            let { data: newProd, error: prodError } = await supabaseClient
+              .from('products')
+              .insert({ name: name, category: 'Abarrotes', unit: 'Unidad' })
+              .select()
+              .single();
+
+            if (prodError) {
+              console.error("Error creando producto:", prodError);
+              continue;
+            }
+            productId = newProd.id;
+          }
+
+          let { error: priceError } = await supabaseClient.from('prices').insert({
+            product_id: productId,
             store_id: storeId,
             price: price
           });
+
+          if (priceError) {
+            console.error("Error guardando precio:", priceError);
+          }
         }
       }
 
@@ -486,12 +508,11 @@
       switchTab('search');
 
     } catch (err) {
-      console.error('Error al guardar:', err);
-      showToast('❌ Error al sincronizar con la nube.');
+      console.error('Error general al guardar:', err);
+      showToast('❌ ' + (err.message || 'Error al sincronizar con la nube.'));
     }
   }
 
-  // Inicializar cargando datos al abrir
   loadCloudPrices();
 </script>
 </body>
