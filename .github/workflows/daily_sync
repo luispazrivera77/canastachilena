@@ -1,0 +1,27 @@
+name: Actualización Diaria Canasta Chile
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Se ejecuta todos los días a las 06:00 AM UTC
+  workflow_dispatch:
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install @supabase/supabase-js
+
+      - name: Ejecutar script de actualización
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node update_prices.js
