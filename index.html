@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Canasta Chile - Monitor Nacional de Productos Esenciales</title>
+<title>Canasta Chile - Ranking de Precios por Producto</title>
 <!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -68,66 +68,94 @@
     background: #fff;
   }
 
-  /* Contenedor del Ticker Protagonista */
-  .ticker-container {
-    overflow: hidden;
-    position: relative;
-    width: 100%;
-    height: 380px;
-    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    padding: 10px;
-  }
-
-  .ticker-track {
+  /* Contenedor del Ranking */
+  .ranking-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    position: absolute;
-    width: 100%;
-    animation: scrollProducts 35s linear infinite;
+    gap: 10px;
+    margin-top: 10px;
   }
 
-  .ticker-container:hover .ticker-track {
-    animation-play-state: paused;
-  }
-
-  @keyframes scrollProducts {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(-50%); }
-  }
-
-  .product-spotlight {
-    background: white;
-    border-radius: 10px;
-    padding: 15px 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  .ranking-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-left: 6px solid var(--primary-color);
+    position: relative;
+    transition: transform 0.2s;
   }
 
-  .product-details h3 { font-size: 1.05rem; color: #111; margin-bottom: 3px; }
-  .product-details .badge { font-size: 0.75rem; color: #555; background: #e9ecef; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  /* Destacar el puesto 1 (El más barato) */
+  .ranking-card.podium-1 {
+    border: 2px solid var(--primary-color);
+    background: #f0fdf4;
+  }
 
-  .best-deal {
+  .rank-info .position {
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .podium-1 .rank-info .position {
+    color: var(--primary-color);
+  }
+
+  .rank-info h3 { font-size: 1.05rem; color: #212529; }
+  .rank-info .store-name { font-size: 0.85rem; color: #495057; font-weight: 600; }
+
+  .rank-price {
     text-align: right;
   }
-  .best-deal .price { font-size: 1.20rem; font-weight: 800; color: var(--primary-color); display: block; }
-  .best-deal .store-tag { font-size: 0.75rem; font-weight: 600; color: #d90429; background: #ffe3e3; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
 
-  button.refresh-btn {
-    background: var(--accent-color);
-    color: #212529;
-    border: none;
-    padding: 10px;
-    border-radius: 6px;
+  .rank-price .amount {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    display: block;
+  }
+
+  .podium-1 .rank-price .amount {
+    color: #0b6623;
+  }
+
+  .badge-best {
+    background: #2b9348;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
     font-weight: bold;
+    display: inline-block;
+    margin-top: 4px;
+  }
+
+  /* Sugerencias rápidas de búsqueda */
+  .quick-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .chip {
+    background: #e9ecef;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
     cursor: pointer;
-    width: 100%;
-    margin-top: 5px;
+    transition: background 0.2s;
+  }
+
+  .chip:hover, .chip.active {
+    background: var(--primary-color);
+    color: white;
   }
 
   .toast {
@@ -151,42 +179,48 @@
 <body>
 
 <header>
-  <h1>🇨🇱 Canasta Chile - Monitor Nacional</h1>
-  <p>El mejor precio de tu Región y Comuna en tiempo real</p>
+  <h1>🇨🇱 Canasta Chile - Ranking de Precios</h1>
+  <p>Compara el producto protagonista y encuentra el comercio más económico</p>
 </header>
 
 <main>
-  <!-- Selector de Cobertura Nacional -->
+  <!-- Selector de Territorio -->
   <div class="card">
-    <h2>📍 Cobertura Territorial</h2>
+    <h2>📍 Zona Geográfica</h2>
     <div style="display: flex; gap: 10px;">
       <div style="flex: 1;">
         <label>Región</label>
-        <select id="filterRegion" onchange="updateCommunities(); updateTicker();">
-          <!-- Se llena dinámicamente -->
+        <select id="filterRegion" onchange="updateCommunities(); renderRanking();">
+          <!-- Dinámico -->
         </select>
       </div>
       <div style="flex: 1;">
         <label>Comuna</label>
-        <select id="filterCommune" onchange="updateTicker()">
-          <!-- Se llena dinámicamente según la región -->
+        <select id="filterCommune" onchange="renderRanking()">
+          <!-- Dinámico -->
         </select>
       </div>
     </div>
-    <button class="refresh-btn" onclick="updateTicker()">🔄 Actualizar Red Nacional</button>
   </div>
 
-  <!-- Carrusel Protagonista de Productos por Zona -->
+  <!-- Buscador y Ranking del Producto -->
   <div class="card">
-    <h2>🏆 Productos Protagonistas (Mejor Precio Local)</h2>
-    <input type="text" id="searchProduct" placeholder="Buscar producto esencial..." oninput="updateTicker()" />
+    <h2>🔍 Buscar Producto Protagonista</h2>
+    <input type="text" id="searchProduct" placeholder="Escribe un producto (ej. Leche, Arroz, Pan, Huevos)..." oninput="renderRanking()" />
     
-    <div class="ticker-container">
-      <div class="ticker-track" id="tickerTrack">
-        <!-- Inyección dinámica -->
-      </div>
+    <div class="quick-chips">
+      <span style="font-size:0.8rem; align-self:center; font-weight:600; color:#555;">Sugerencias:</span>
+      <button class="chip active" onclick="setSearch('Leche')">🥛 Leche</button>
+      <button class="chip" onclick="setSearch('Arroz')">🌾 Arroz</button>
+      <button class="chip" onclick="setSearch('Pan')">🥖 Pan</button>
+      <button class="chip" onclick="setSearch('Huevos')">🥚 Huevos</button>
+      <button class="chip" onclick="setSearch('Aceite')">🌻 Aceite</button>
     </div>
-    <p style="text-align: center; font-size: 0.75rem; color: #777; margin-top: 8px;">💡 Mantén presionado o pon el cursor para pausar el carrusel.</p>
+
+    <h3 style="font-size: 0.95rem; margin-top: 15px; color: #444;">📊 Ranking de Comercios (Más barato a más caro):</h3>
+    <div class="ranking-list" id="rankingResults">
+      <!-- Inyección dinámica del ranking -->
+    </div>
   </div>
 </main>
 
@@ -212,27 +246,27 @@
     "Magallanes": ["Punta Arenas", "Laguna Blanca", "Río Verde", "San Gregorio", "Cabo de Hornos", "Antártica", "Porvenir", "Primavera", "Timaukel", "Natales", "Torres del Paine"]
   };
 
-  // Precios base distribuidos competitivamente para que diferentes supermercados ganen según el producto
-  const rawProductsMarket = [
-    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1090, "Santa Isabel": 1070, "Jumbo": 1150, "Unimarc": 1110 } },
-    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1050, "Santa Isabel": 1080, "Jumbo": 1090, "Unimarc": 1040 } },
-    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", prices: { "Lider": 1290, "Santa Isabel": 1350, "Jumbo": 1390, "Unimarc": 1310 } },
-    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", prices: { "Lider": 890, "Santa Isabel": 920, "Jumbo": 950, "Unimarc": 880 } },
-    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", prices: { "Lider": 2490, "Santa Isabel": 2550, "Jumbo": 2590, "Unimarc": 2450 } },
-    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", prices: { "Lider": 1250, "Santa Isabel": 1280, "Jumbo": 1290, "Unimarc": 1220 } },
-    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", prices: { "Lider": 1980, "Santa Isabel": 1990, "Jumbo": 2050, "Unimarc": 1950 } },
-    { name: "Pan Hallulla (1 Kg)", category: "Panadería", prices: { "Lider": 1990, "Santa Isabel": 2010, "Jumbo": 2090, "Unimarc": 1960 } },
-    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", prices: { "Lider": 4850, "Santa Isabel": 4990, "Jumbo": 5190, "Unimarc": 4790 } },
-    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", prices: { "Lider": 4390, "Santa Isabel": 4450, "Jumbo": 4490, "Unimarc": 4290 } },
-    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", prices: { "Lider": 5890, "Santa Isabel": 5950, "Jumbo": 5990, "Unimarc": 5790 } },
-    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", prices: { "Lider": 2190, "Santa Isabel": 2220, "Jumbo": 2250, "Unimarc": 2150 } },
-    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1690, "Santa Isabel": 1720, "Jumbo": 1750, "Unimarc": 1650 } },
-    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1290, "Santa Isabel": 1320, "Jumbo": 1350, "Unimarc": 1250 } },
-    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1190, "Santa Isabel": 1220, "Jumbo": 1250, "Unimarc": 1150 } },
-    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1890, "Santa Isabel": 1920, "Jumbo": 1950, "Unimarc": 1850 } },
-    { name: "Detergente Líquido 3 Litros", category: "Limpieza", prices: { "Lider": 7990, "Santa Isabel": 8150, "Jumbo": 8290, "Unimarc": 7890 } },
-    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", prices: { "Lider": 9890, "Santa Isabel": 9950, "Jumbo": 9990, "Unimarc": 9790 } },
-    { name: "Lavaloza Líquido 750cc", category: "Limpieza", prices: { "Lider": 1490, "Santa Isabel": 1520, "Jumbo": 1550, "Unimarc": 1450 } }
+  // Base detallada con múltiples comercios por producto para calcular el ranking
+  const productsMarketDB = [
+    { name: "Leche Entera 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1090, "Santa Isabel": 1070, "Jumbo": 1150, "Unimarc": 1110, "Acuenta": 990 } },
+    { name: "Leche Descremada 1 Litro (Caja)", category: "Lácteos", prices: { "Lider": 1050, "Santa Isabel": 1080, "Jumbo": 1090, "Unimarc": 1040, "Acuenta": 970 } },
+    { name: "Arroz Grado 1 (1 Kg)", category: "Abarrotes", prices: { "Lider": 1290, "Santa Isabel": 1350, "Jumbo": 1390, "Unimarc": 1310, "Acuenta": 1190 } },
+    { name: "Fideos Tallarín N° 74 (400g)", category: "Abarrotes", prices: { "Lider": 890, "Santa Isabel": 920, "Jumbo": 950, "Unimarc": 880, "Acuenta": 790 } },
+    { name: "Aceite Vegetal Maravilla 1 Litro", category: "Abarrotes", prices: { "Lider": 2490, "Santa Isabel": 2550, "Jumbo": 2590, "Unimarc": 2450, "Acuenta": 2390 } },
+    { name: "Azúcar Granulada 1 Kg", category: "Abarrotes", prices: { "Lider": 1250, "Santa Isabel": 1280, "Jumbo": 1290, "Unimarc": 1220, "Acuenta": 1150 } },
+    { name: "Pan Marraqueta (1 Kg)", category: "Panadería", prices: { "Lider": 1980, "Santa Isabel": 1990, "Jumbo": 2050, "Unimarc": 1950, "Feria Libre": 1790 } },
+    { name: "Pan Hallulla (1 Kg)", category: "Panadería", prices: { "Lider": 1990, "Santa Isabel": 2010, "Jumbo": 2090, "Unimarc": 1960, "Feria Libre": 1800 } },
+    { name: "Huevos Blancos Cartón 30 Unidades", category: "Carnes y Huevos", prices: { "Lider": 4850, "Santa Isabel": 4990, "Jumbo": 5190, "Unimarc": 4790, "Feria Libre": 4500 } },
+    { name: "Pechuga de Pollo Entera (Kg)", category: "Carnes y Huevos", prices: { "Lider": 4390, "Santa Isabel": 4450, "Jumbo": 4490, "Unimarc": 4290, "Acuenta": 4190 } },
+    { name: "Carne Molida Corriente (Kg)", category: "Carnes y Huevos", prices: { "Lider": 5890, "Santa Isabel": 5950, "Jumbo": 5990, "Unimarc": 5790, "Acuenta": 5590 } },
+    { name: "Queso Gauda Laminado (250g)", category: "Lácteos", prices: { "Lider": 2190, "Santa Isabel": 2220, "Jumbo": 2250, "Unimarc": 2150, "Acuenta": 1990 } },
+    { name: "Tomate Entero Larga Vida (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1690, "Santa Isabel": 1720, "Jumbo": 1750, "Unimarc": 1650, "Feria Libre": 1200 } },
+    { name: "Papa Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1290, "Santa Isabel": 1320, "Jumbo": 1350, "Unimarc": 1250, "Feria Libre": 990 } },
+    { name: "Cebolla Granel (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1190, "Santa Isabel": 1220, "Jumbo": 1250, "Unimarc": 1150, "Feria Libre": 900 } },
+    { name: "Plátano Cuidado (Kg)", category: "Frutas y Verduras", prices: { "Lider": 1890, "Santa Isabel": 1920, "Jumbo": 1950, "Unimarc": 1850, "Feria Libre": 1400 } },
+    { name: "Detergente Líquido 3 Litros", category: "Limpieza", prices: { "Lider": 7990, "Santa Isabel": 8150, "Jumbo": 8290, "Unimarc": 7890, "Acuenta": 7490 } },
+    { name: "Papel Higiénico Confort 40 Rolos", category: "Limpieza", prices: { "Lider": 9890, "Santa Isabel": 9950, "Jumbo": 9990, "Unimarc": 9790, "Acuenta": 9190 } },
+    { name: "Lavaloza Líquido 750cc", category: "Limpieza", prices: { "Lider": 1490, "Santa Isabel": 1520, "Jumbo": 1550, "Unimarc": 1450, "Acuenta": 1390 } }
   ];
 
   function showToast(msg) {
@@ -245,7 +279,6 @@
   function initRegions() {
     const regSelect = document.getElementById('filterRegion');
     regSelect.innerHTML = '';
-    
     for (const region in chileGeoData) {
       let opt = document.createElement('option');
       opt.value = region;
@@ -260,7 +293,6 @@
     const regSelect = document.getElementById('filterRegion').value;
     const comSelect = document.getElementById('filterCommune');
     comSelect.innerHTML = '';
-
     const communes = chileGeoData[regSelect] || [];
     communes.forEach((com, idx) => {
       let opt = document.createElement('option');
@@ -271,65 +303,79 @@
     });
   }
 
-  function updateTicker() {
+  function setSearch(term) {
+    document.getElementById('searchProduct').value = term;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    renderRanking();
+  }
+
+  function renderRanking() {
+    const searchTerm = document.getElementById('searchProduct').value.toLowerCase().trim();
     const commune = document.getElementById('filterCommune').value;
-    const searchVal = document.getElementById('searchProduct').value.toLowerCase();
-    const track = document.getElementById('tickerTrack');
+    const container = document.getElementById('rankingResults');
 
-    let filtered = rawProductsMarket.filter(item => item.name.toLowerCase().includes(searchVal));
-
-    if (filtered.length === 0) {
-      track.innerHTML = '<p style="text-align:center; padding:40px; color:#777;">No se encontró el producto.</p>';
+    if (!searchTerm) {
+      container.innerHTML = '<p style="text-align:center; padding:25px; color:#777;">👆 Escribe el nombre de un producto o selecciona una sugerencia arriba para ver su ranking de precios.</p>';
       return;
     }
 
-    let htmlContent = '';
-    const loopItems = [...filtered, ...filtered];
+    // Buscar coincidencia en la base de datos
+    const foundProduct = productsMarketDB.find(item => item.name.toLowerCase().includes(searchTerm));
 
-    loopItems.forEach(prod => {
-      let bestStore = "";
-      let bestPrice = Infinity;
+    if (!foundProduct) {
+      container.innerHTML = `<p style="text-align:center; padding:25px; color:#777;">No se encontraron resultados para "${searchTerm}".</p>`;
+      return;
+    }
 
-      for (const [store, price] of Object.entries(prod.prices)) {
-        let regionFactor = 1.0;
-        const currentReg = document.getElementById('filterRegion').value;
-        if (["Arica y Parinacota", "Tarapacá", "Magallanes", "Aysén"].includes(currentReg)) {
-          regionFactor = 1.08;
-        } else if (currentReg === "Metropolitana de Santiago") {
-          regionFactor = 1.03;
-        }
+    // Calcular factor regional
+    let regionFactor = 1.0;
+    const currentReg = document.getElementById('filterRegion').value;
+    if (["Arica y Parinacota", "Tarapacá", "Magallanes", "Aysén"].includes(currentReg)) {
+      regionFactor = 1.08;
+    } else if (currentReg === "Metropolitana de Santiago") {
+      regionFactor = 1.03;
+    }
 
-        // Variación aleatoria leve para simular ofertas dinámicas locales
-        let randomVariation = 1 + (Math.random() * 0.04 - 0.02);
-        let adjustedPrice = Math.round((price * regionFactor * randomVariation) / 10) * 10;
+    // Convertir el objeto de precios en un array para ordenar
+    let priceArray = [];
+    for (const [store, price] of Object.entries(foundProduct.prices)) {
+      let finalPrice = Math.round((price * regionFactor) / 10) * 10;
+      priceArray.push({ store, price: finalPrice });
+    }
 
-        if (adjustedPrice < bestPrice) {
-          bestPrice = adjustedPrice;
-          bestStore = store;
-        }
-      }
+    // ORDENAR: Del más barato al más caro
+    priceArray.sort((a, b) => a.price - b.price);
 
-      htmlContent += `
-        <div class="product-spotlight">
-          <div class="product-details">
-            <h3>${prod.name}</h3>
-            <span class="badge">${prod.category} • 📍 ${commune}</span>
+    let html = '';
+    priceArray.forEach((item, index) => {
+      let isBest = index === 0;
+      let podiumClass = isBest ? 'podium-1' : '';
+      let positionText = isBest ? '🥇 1er Lugar (Mejor Precio)' : `${index + 1}° Lugar`;
+
+      html += `
+        <div class="ranking-card ${podiumClass}">
+          <div class="rank-info">
+            <span class="position">${positionText}</span>
+            <h3>${foundProduct.name}</h3>
+            <span class="store-name">🛒 ${item.store} (${commune})</span>
+            ${isBest ? '<br><span class="badge-best">¡Ahorras más aquí!</span>' : ''}
           </div>
-          <div class="best-deal">
-            <span class="price">$${bestPrice.toLocaleString('es-CL')}</span>
-            <span class="store-tag">🏆 ${bestStore}</span>
+          <div class="rank-price">
+            <span class="amount">$${item.price.toLocaleString('es-CL')}</span>
           </div>
         </div>
       `;
     });
 
-    track.innerHTML = htmlContent;
+    container.innerHTML = html;
   }
 
   window.addEventListener('DOMContentLoaded', () => {
     initRegions();
-    updateTicker();
-    showToast('🇨🇱 Cobertura nacional activa');
+    document.getElementById('searchProduct').value = "Leche";
+    renderRanking();
+    showToast('📊 Buscador y Ranking de Precios Activo');
   });
 </script>
 </body>
