@@ -396,7 +396,6 @@
       showToast('📸 Iniciando motor OCR...');
 
       try {
-        // Creamos el trabajador de Tesseract con monitoreo de progreso
         const worker = await Tesseract.createWorker('spa', 1, {
           logger: m => {
             if (m.status === 'recognizing text') {
@@ -453,7 +452,7 @@
   }
 
   // ==========================================
-  // SUBIR DATOS A LA NUBE (BLINDADO)
+  // SUBIR DATOS A LA NUBE (CON DEPURACIÓN VISUAL)
   // ==========================================
   async function submitPricesToCloud() {
     const db = initSupabase();
@@ -474,6 +473,7 @@
     showToast('☁️ Guardando en la red comunitaria...');
 
     try {
+      // 1. Registrar o buscar el comercio
       let { data: storeData, error: storeError } = await db
         .from('stores')
         .insert({ name: storeName, commune: commune, sector: sector })
@@ -481,11 +481,13 @@
         .single();
 
       if (storeError) {
-        console.error("Error en Store:", storeError);
-        throw new Error("No se pudo registrar el comercio.");
+        console.error("Detalle del error en Store:", storeError);
+        alert("Error al registrar comercio: " + storeError.message);
+        return;
       }
       const storeId = storeData.id;
 
+      // 2. Recorrer cada producto detectado por el OCR
       const rows = document.querySelectorAll('.scanned-row');
       for (let idx = 0; idx < rows.length; idx++) {
         const nameInput = document.getElementById(`scannedName_${idx}`);
@@ -497,7 +499,8 @@
         const price = parseInt(priceInput.value);
 
         if (name && !isNaN(price)) {
-          let { data: existingProd } = await db
+          // Verificar si el producto ya existe
+          let { data: existingProd, error: findError } = await db
             .from('products')
             .select('id')
             .ilike('name', name)
@@ -508,6 +511,7 @@
           if (existingProd) {
             productId = existingProd.id;
           } else {
+            // Crear el producto si no existe
             let { data: newProd, error: prodError } = await db
               .from('products')
               .insert({ name: name, category: 'Abarrotes', unit: 'Unidad' })
@@ -515,12 +519,13 @@
               .single();
 
             if (prodError) {
-              console.error("Error creando producto:", prodError);
+              console.error("Detalle error creando producto:", prodError);
               continue;
             }
             productId = newProd.id;
           }
 
+          // Registrar el precio asociado
           let { error: priceError } = await db.from('prices').insert({
             product_id: productId,
             store_id: storeId,
@@ -528,7 +533,7 @@
           });
 
           if (priceError) {
-            console.error("Error guardando precio:", priceError);
+            console.error("Detalle error guardando precio:", priceError);
           }
         }
       }
@@ -541,7 +546,7 @@
 
     } catch (err) {
       console.error('Error general al guardar:', err);
-      showToast('❌ ' + (err.message || 'Error al sincronizar con la nube.'));
+      showToast('❌ Error crítico al sincronizar con la nube.');
     }
   }
 
